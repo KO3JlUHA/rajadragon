@@ -2,18 +2,44 @@ import pygame
 import sys
 import math
 
+class Collisions():
+        playerH = 92
+        playerW = 66
+        screenH = 1300
+        screenW = 1950
+        blockX = 60
+        blockY = 60
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, position, group):
         super().__init__(group)
+        self.health
         self.position = position
         self.image = pygame.image.load('alienBlue_stand.png').convert_alpha()
-        self.image = pygame.transform.scale(self.image, (66, 92))
+        self.image = pygame.transform.scale(self.image, (Collisions.playerW, Collisions.playerH))
         self.rect = self.image.get_rect(center=position)
         self.direction = pygame.math.Vector2()
         self.speed = 6
 
+    def input(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w] and (CameraGroup.offset.y + CameraGroup.half_h) > Collisions.playerH/2:
+            self.direction.y = -1
+        elif keys[pygame.K_s] and (CameraGroup.offset.y + CameraGroup.half_h) < Collisions.screenH - Collisions.playerH/2:
+            self.direction.y = 1
+        else:
+            self.direction.y = 0
+
+        if keys[pygame.K_d] and (CameraGroup.offset.x + CameraGroup.half_w) < Collisions.screenW - Collisions.playerW/2:
+            self.direction.x = 1
+        elif keys[pygame.K_a] and (CameraGroup.offset.x + CameraGroup.half_w) > Collisions.playerW/2:
+            self.direction.x = -1
+        else:
+            self.direction.x = 0
+
+
     def update(self):
+        self.input()
         self.rect.center += self.direction * self.speed
 
 
@@ -55,56 +81,38 @@ class PlayerParticle:
         self.velocityX = math.cos(self.angle) * self.speed
         self.velocityY = math.sin(self.angle) * self.speed
 
-    def main(self, display):
-        self.x -= int(self.velocityX)
-        self.y -= int(self.velocityY)
+    def main(self, display, directionX, directionY):
+        self.x -= int(self.velocityX + directionX)
+        self.y -= int(self.velocityY + directionY)
         pygame.draw.circle(display, (0, 0, 0), (self.x, self.y), 5)
 
 
 pygame.init()
-Screen = pygame.display.set_mode((1280, 720))
+Screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 Clock = pygame.time.Clock()
 
 CameraGroup = CameraGroup()
 player = Player((640, 320), CameraGroup)
-
 playerParticle = []
 while True:
+    if CameraGroup.offset.x == 0 and CameraGroup.offset.y == 0:
+        pygame.draw.rect(Screen, (255, 0, 0), (0, 0, 500, 500))
     mouseX, mouseY = pygame.mouse.get_pos()
-    keys = pygame.key.get_pressed()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                playerParticle.append(PlayerParticle(player.position[0] + 20, player.position[1] + 50, mouseX, mouseY))
+                playerParticle.append(PlayerParticle(CameraGroup.half_w, CameraGroup.half_h, mouseX, mouseY))
 
-    if keys[pygame.K_w]:
-        player.direction.y = -1
 
-    elif keys[pygame.K_s]:
-        player.direction.y = 1
-
-    else:
-        player.direction.y = 0
-
-    if keys[pygame.K_d]:
-        player.direction.x = 1
-
-    elif keys[pygame.K_a]:
-        player.direction.x = -1
-
-    elif keys[pygame.K_LSHIFT]:
-        player.speed += 5
-
-    else:
-        player.direction.x = 0
 
     Screen.fill('#71ddee')
     CameraGroup.update()
     CameraGroup.CustomDraw(player)
     for particle in playerParticle:
-        particle.main(Screen)
+        particle.main(Screen, player.direction.x * player.speed, player.direction.y * player.speed)
+
     pygame.display.update()
     Clock.tick(60)
