@@ -1,11 +1,13 @@
 import pygame
 import sys
 import math
+import time
+import random
 
 
 def CheckCollision(x, y, xlen, ylen, x2, y2, xlen2, ylen2):
-    inrangex= (x>x2 and x<x2+xlen2) or (x2>x and x2<x+xlen)
-    inrangey = (y>y2 and y<y2+ylen2) or (y2>y and y2<y+ylen)
+    inrangex = (x > x2 and x < x2 + xlen2) or (x2 > x and x2 < x + xlen)
+    inrangey = (y > y2 and y < y2 + ylen2) or (y2 > y and y2 < y + ylen)
     return inrangex and inrangey
 
 
@@ -16,7 +18,6 @@ class Borders():
     screenW = 1950
     blockX = 60
     blockY = 60
-
 
 
 class Player(pygame.sprite.Sprite):
@@ -52,13 +53,20 @@ class Player(pygame.sprite.Sprite):
 
 
 class Mob():
-    def __init__(self, mapX, mapY, width, color):
+    def __init__(self, mapX, mapY, width, height, health, speed, color):
         self.mapX = mapX
         self.mapY = mapY
+        self.homeX = mapX
+        self.homeY = mapY
         self.width = width
-        self.height = 120
+        self.height = height
         self.color = color
-        self.health = 100
+        self.isAlive = True
+        self.health = health
+        self.maxHealth = health
+        self.deathTime = 0
+        self.speed = speed
+        self.timeOutOfRAnge = 0
 
     def main(self, display):
         pygame.draw.rect(display, self.color,
@@ -120,9 +128,9 @@ Clock = pygame.time.Clock()
 
 CameraGroup = CameraGroup()
 player = Player((640, 320), CameraGroup)
-mob = Mob(100, 200, 120, (255, 0, 0))
-mob2 = Mob(220, 101, 10, (0, 255, 0))
-moblist = [mob,mob2]
+mob = Mob(100, 200, 120, 60, 100, 5, (255, 0, 0))
+mob2 = Mob(220, 101, 60, 120, 300, 5, (0, 255, 0))
+moblist = [mob, mob2]
 playerParticles = []
 while True:
     if CameraGroup.offset.x == 0 and CameraGroup.offset.y == 0:
@@ -134,7 +142,7 @@ while True:
             sys.exit()
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                playerParticles.append(PlayerParticle(CameraGroup.half_w, CameraGroup.half_h, mouseX, mouseY, 30, 21))
+                playerParticles.append(PlayerParticle(CameraGroup.half_w, CameraGroup.half_h, mouseX, mouseY, 30, 231))
             elif event.button == 3:
                 playerParticles = playerParticles[1:]
 
@@ -142,24 +150,52 @@ while True:
     CameraGroup.update()
     CameraGroup.CustomDraw(player)
 
-
     for mobi in moblist:
-        mobi.main(Screen)
+        if (mobi.mapX-500>mobi.homeX or mobi.mapX+500<mobi.homeX or mobi.mapY-500>mobi.homeY or mobi.mapY+500<mobi.homeY) and mobi.timeOutOfRAnge == 0:
+            mobi.timeOutOfRAnge=time.time()
+        if time.time()>= mobi.timeOutOfRAnge+2 and mobi.timeOutOfRAnge != 0:
+            mobi.mapX=mobi.homeX
+            mobi.mapY=mobi.homeY
+            mobi.timeOutOfRAnge = 0
+        if mobi.deathTime + 10 <= time.time() or mobi.isAlive:
+            if not mobi.isAlive:
+                mobi.health=mobi.maxHealth
+            mobi.isAlive = True
+            if (CheckCollision(mobi.mapX - 200, mobi.mapY - 200, mobi.width + 400, mobi.height + 400,
+                               player.rect.centerx - Borders.playerW / 2, player.rect.centery - Borders.playerH / 2,
+                               Borders.playerW, Borders.playerH, )):
+                x = random.randint(0,1)
+                if (x==0):
+                    if (mobi.mapX>player.rect.centerx - Borders.playerW / 2):
+                        mobi.mapX-=mobi.speed
+                    else:
+                        mobi.mapX += mobi.speed
+                else:
+                    if (mobi.mapY>player.rect.centery - Borders.playerH / 2):
+                        mobi.mapY-=mobi.speed
+                    else:
+                        mobi.mapY += mobi.speed
+            mobi.main(Screen)
     for particle in playerParticles:
         flag = True
         for mobi in moblist:
-            if CheckCollision(mobi.mapX, mobi.mapY, mobi.width, mobi.height, particle.x+CameraGroup.offset.x, particle.y+CameraGroup.offset.y, 10,10):
+            if mobi.isAlive and CheckCollision(mobi.mapX, mobi.mapY, mobi.width, mobi.height,
+                                               particle.x + CameraGroup.offset.x, particle.y + CameraGroup.offset.y, 10,
+                                               10):
                 flag = False
-                mobi.health-=particle.damage
-                if (mobi.health<=0):
-                    moblist.remove(mobi)
+                mobi.health -= particle.damage
+                if (mobi.isAlive and mobi.health <= 0):
+                    mobi.isAlive = False
+                    mobi.mapX=mobi.homeX
+                    mobi.mapY=mobi.homeY
+                    mobi.deathTime = time.time()
         if particle.hasToExist and flag:
             particle.main(Screen, player.direction.x * player.speed, player.direction.y * player.speed)
         else:
             playerParticles.remove(particle)
-    if CheckCollision(player.rect.centerx-Borders.playerW/2, player.rect.centery-Borders.playerH/2,
-                      Borders.playerW, Borders.playerH, mob.mapX, mob.mapY, 120, 120):
-        print("h")
+    # if CheckCollision(player.rect.centerx-Borders.playerW/2, player.rect.centery-Borders.playerH/2,
+    #                   Borders.playerW, Borders.playerH, mob.mapX, mob.mapY, 120, 120):
+    #     print("h")
 
     pygame.display.update()
     Clock.tick(60)
