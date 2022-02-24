@@ -5,6 +5,25 @@ import time
 import random
 
 
+class snowBall():
+    def __init__(self):
+        self.dmg = 1
+        self.range = 60
+        self.speed = 8
+        self.cooldown = 0.25
+        self.price = 10
+        self.spritePAth = "snowball.png"
+
+class bow():
+    def __init__(self):
+        self.dmg = 10
+        self.range = 65
+        self.speed = 12#gun will be 18 speed
+        self.cooldown = 1
+        self.price = 100
+        self.spritePAth = "arrow.png"
+
+
 def CheckCollision(x, y, xlen, ylen, x2, y2, xlen2, ylen2):
     inrangex = (x > x2 and x < x2 + xlen2) or (x2 > x and x2 < x + xlen)
     inrangey = (y > y2 and y < y2 + ylen2) or (y2 > y and y2 < y + ylen)
@@ -101,14 +120,21 @@ class CameraGroup(pygame.sprite.Group):
 
 
 class PlayerParticle:
-    def __init__(self, x, y, mouseX, mouseY, range, damage):
+    def __init__(self, x, y, mouseX, mouseY, weaponGiven):
         self.x = x
         self.y = y
-        self.damage = damage
+        self.weapon = weaponGiven
+        self.damage = weaponGiven.dmg
+        self.speed = weaponGiven.speed
+        self.range = weaponGiven.range
+        self.cooldown = weaponGiven.cooldown
+        self.price = weaponGiven.price
+        self.rangeToTravel = self.range
+
+
+
         self.mouseX = mouseX
         self.mouseY = mouseY
-        self.speed = 15
-        self.rangeToTravel = range
         self.hasToExist = True
         self.angle = math.atan2(y - mouseY, x - mouseX)
         self.velocityX = math.cos(self.angle) * self.speed
@@ -128,10 +154,14 @@ Clock = pygame.time.Clock()
 
 CameraGroup = CameraGroup()
 player = Player((640, 320), CameraGroup)
-mob = Mob(100, 200, 120, 60, 100, 5, (255, 0, 0))
-mob2 = Mob(220, 101, 60, 120, 300, 5, (0, 255, 0))
+mob = Mob(100, 200, 20, 50, 100, 5, (255, 0, 0))
+mob2 = Mob(220, 101, 60, 120, 20, 5, (0, 255, 0))
 moblist = [mob, mob2]
 playerParticles = []
+arrow = bow()
+ball = snowBall()
+weapon_used = arrow
+last_attack = 0
 while True:
     if CameraGroup.offset.x == 0 and CameraGroup.offset.y == 0:
         pygame.draw.rect(Screen, (255, 0, 0), (0, 0, 500, 500))
@@ -140,9 +170,16 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_1:
+                weapon_used=arrow
+            elif event.key == pygame.K_2:
+                weapon_used=ball
+
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                playerParticles.append(PlayerParticle(CameraGroup.half_w, CameraGroup.half_h, mouseX, mouseY, 30, 231))
+            if event.button == 1 and time.time()>last_attack+weapon_used.cooldown:
+                playerParticles.append(PlayerParticle(CameraGroup.half_w, CameraGroup.half_h, mouseX, mouseY, weapon_used))
+                last_attack=time.time()
             elif event.button == 3:
                 playerParticles = playerParticles[1:]
 
