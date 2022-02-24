@@ -13,6 +13,7 @@ class snowBall():
         self.cooldown = 0.25
         self.price = 10
         self.spritePAth = "snowball.png"
+        self.color = (255,255,255)
 
 class bow():
     def __init__(self):
@@ -22,6 +23,7 @@ class bow():
         self.cooldown = 1
         self.price = 100
         self.spritePAth = "arrow.png"
+        self.color = (255,0,0)
 
 
 def CheckCollision(x, y, xlen, ylen, x2, y2, xlen2, ylen2):
@@ -130,7 +132,7 @@ class PlayerParticle:
         self.cooldown = weaponGiven.cooldown
         self.price = weaponGiven.price
         self.rangeToTravel = self.range
-
+        self.color = weaponGiven.color
 
 
         self.mouseX = mouseX
@@ -145,7 +147,7 @@ class PlayerParticle:
         self.y -= int(self.velocityY + directionY)
         self.rangeToTravel -= 1
         self.hasToExist = self.rangeToTravel != 0
-        pygame.draw.circle(display, (0, 0, 0), (self.x, self.y), 5)
+        pygame.draw.circle(display, self.color , (self.x, self.y), 5)
 
 
 pygame.init()
@@ -217,7 +219,7 @@ while True:
         flag = True
         for mobi in moblist:
             if mobi.isAlive and CheckCollision(mobi.mapX, mobi.mapY, mobi.width, mobi.height,
-                                               particle.x + CameraGroup.offset.x, particle.y + CameraGroup.offset.y, 10,
+                                               particle.x-5 + CameraGroup.offset.x, particle.y-5 + CameraGroup.offset.y, 10,
                                                10):
                 flag = False
                 mobi.health -= particle.damage
