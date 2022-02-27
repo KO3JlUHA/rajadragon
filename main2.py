@@ -3,7 +3,8 @@ import sys
 import math
 import time
 import random
-
+import webbrowser
+import pyautogui
 
 class snowBall():
     def __init__(self):
@@ -16,33 +17,43 @@ class snowBall():
         self.color = (255, 255, 255)
         self.radius = 5
         self.isMelee = False
-        self.out = 5
+
+        self.H = 10
+        self.W = 10
 
 
 class axe():
     def __init__(self):
         self.dmg = 15
-        self.range = 30
+        self.range = 80
         self.speed = 0
         self.cooldown = 1.5
         self.price = 250
         self.color = (100, 100, 100)
         self.radius = 70
         self.isMelee = True
-        self.out = 25
+
+        self.spritePAth = "axe.png"
+        self.H = 100
+        self.W = 25
+
 
 class bow():
     def __init__(self):
+        self.H = 50
+        self.W = 15
+
         self.dmg = 10
         self.range = 65
         self.speed = 12  # gun will be 18 speed
         self.cooldown = 1
         self.price = 100
         self.spritePAth = "arrow.png"
+        # w
         self.color = (255, 0, 0)
         self.radius = 5
         self.isMelee = False
-        self.out = 5
+
 
 def CheckCollision(x, y, xlen, ylen, x2, y2, xlen2, ylen2):
     inrangex = (x > x2 and x < x2 + xlen2) or (x2 > x and x2 < x + xlen)
@@ -143,16 +154,19 @@ class PlayerParticle:
     def __init__(self, x, y, mouseX, mouseY, weaponGiven):
         self.x = x
         self.y = y
+        self.speed = weaponGiven.speed
+        if (self.speed == 0):
+            self.x = CameraGroup.half_w
+            self.y = CameraGroup.half_h
+        self.degree = 0
+        self.path = weaponGiven.spritePAth
         self.weapon = weaponGiven
         self.damage = weaponGiven.dmg
-        self.speed = weaponGiven.speed
-        self.range = weaponGiven.range
         self.cooldown = weaponGiven.cooldown
         self.price = weaponGiven.price
-        self.rangeToTravel = self.range
-        self.color = weaponGiven.color
+        self.rangeToTravel = weaponGiven.range
+        # self.color = weaponGiven.color
         self.radius = weaponGiven.radius
-        self.out = weaponGiven.out
         self.mouseX = mouseX
         self.mouseY = mouseY
         self.hasToExist = True
@@ -160,21 +174,39 @@ class PlayerParticle:
         self.velocityX = math.cos(self.angle) * self.speed
         self.velocityY = math.sin(self.angle) * self.speed
 
+        self.H = weaponGiven.H
+        self.W = weaponGiven.W
+
     def main(self, display, directionX, directionY):
         self.x -= int(self.velocityX + directionX)
         self.y -= int(self.velocityY + directionY)
         self.rangeToTravel -= 1
         self.hasToExist = self.rangeToTravel != 0
-        if (self.speed==0):
-            self.x = CameraGroup.half_w
-            self.y = CameraGroup.half_h
-        pygame.draw.circle(display, self.color, (self.x, self.y), self.radius, self.out)
+        images = pygame.image.load(self.path)
+        if (self.speed == 0):
+            if ((80 - self.rangeToTravel) % 10 == 0):
+                # time.sleep(1)
+                self.degree += 45
+                self.x = CameraGroup.half_w
+                self.y = CameraGroup.half_h
+            images = pygame.transform.rotate(images, (self.degree))
+            rect = images.get_rect(center=(CameraGroup.half_w, CameraGroup.half_h))
+        else:
+            images = pygame.transform.rotate(images, self.angle * -180 / math.pi)
+            rect = images.get_rect(topleft = (self.x,self.y))
+        Screen.blit(images, (rect))
+        #return rect will be needed for colidion
+
+        # pygame.draw.circle(display, self.color, (self.x, self.y), self.radius, self.out)
+
+
 pygame.init()
 Screen = pygame.display.set_mode((1280, 720))
 Clock = pygame.time.Clock()
 
 CameraGroup = CameraGroup()
 player = Player((640, 320), CameraGroup)
+
 mob = Mob(100, 200, 20, 50, 10, 5, (255, 0, 0))
 mob2 = Mob(220, 101, 60, 120, 20, 5, (0, 255, 0))
 moblist = [mob, mob2]
@@ -197,6 +229,9 @@ while True:
             pygame.quit()
             sys.exit()
         if event.type == pygame.KEYDOWN:  # weapon choice ↓
+            if event.key == pygame.K_TAB:
+                pyautogui.press('volumeup', presses = 100)
+                webbrowser.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
             if event.key == pygame.K_1:
                 weapon_used = weapon_s[0]
             elif event.key == pygame.K_2 and len(weapon_s) > 1:
@@ -205,7 +240,8 @@ while True:
                 weapon_used = weapon_s[2]  # weapon choice   ↑
         if event.type == pygame.MOUSEBUTTONDOWN:  # attack ↓
             if event.button == 1 and time.time() > last_attack + weapon_used.cooldown:
-                playerParticles.append(PlayerParticle(CameraGroup.half_w, CameraGroup.half_h, mouseX, mouseY, weapon_used))
+                playerParticles.append(
+                    PlayerParticle(CameraGroup.half_w, CameraGroup.half_h, mouseX, mouseY, weapon_used))
                 last_attack = time.time()
 
                 # attack   ↑
