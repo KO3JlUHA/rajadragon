@@ -19,9 +19,6 @@ class snowBall():
         self.radius = 5
         self.isMelee = False
 
-        self.H = 10
-        self.W = 10
-
 
 class axe():
     def __init__(self):
@@ -33,17 +30,12 @@ class axe():
         self.color = (100, 100, 100)
         self.radius = 52
         self.isMelee = True
-
         self.spritePAth = "axe.png"
-        self.H = 100
-        self.W = 25
+
 
 
 class bow():
     def __init__(self):
-        self.H = 50
-        self.W = 15
-
         self.dmg = 10
         self.range = 65
         self.speed = 12  # gun will be 18 speed
@@ -185,10 +177,6 @@ class PlayerParticle:
         self.velocityX = math.cos(self.angle) * self.speed
         self.velocityY = math.sin(self.angle) * self.speed
         self.rect = pygame.image.load(self.path).get_rect()
-
-        self.H = weaponGiven.H
-        self.W = weaponGiven.W
-
     def main(self, display, directionX, directionY):
         self.x -= int(self.velocityX + directionX)
         self.y -= int(self.velocityY + directionY)
