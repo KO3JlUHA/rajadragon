@@ -5,10 +5,6 @@ import time
 import random
 import webbrowser
 import pyautogui
-import socket
-
-
-
 
 
 class snowBall():
@@ -32,11 +28,12 @@ class axe():
         self.dmg = 15
         self.range = 80
         self.speed = 0
-        self.cooldown = 3
+        self.cooldown = 1.5
         self.price = 250
         self.color = (100, 100, 100)
-        self.radius = 70
+        self.radius = 52
         self.isMelee = True
+
         self.spritePAth = "axe.png"
         self.H = 100
         self.W = 25
@@ -59,12 +56,6 @@ class bow():
         self.isMelee = False
 
 
-def CheckCollision(x, y, xlen, ylen, x2, y2, xlen2, ylen2):
-    inrangex = (x > x2 and x < x2 + xlen2) or (x2 > x and x2 < x + xlen)
-    inrangey = (y > y2 and y < y2 + ylen2) or (y2 > y and y2 < y + ylen)
-    return inrangex and inrangey
-
-
 class Borders():
     playerH = 92
     playerW = 66
@@ -77,6 +68,7 @@ class Borders():
 class Player(pygame.sprite.Sprite):
     def __init__(self, position, group):
         super().__init__(group)
+        self.isTyping = False
         self.health = 100
         self.position = position
         self.image = pygame.image.load('alienBlue_stand.png').convert_alpha()
@@ -84,7 +76,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=position)
         self.direction = pygame.math.Vector2()
         self.speed = 6
-        self.isTyping = False
+
     def input(self):
         if (self.isTyping):
             return
@@ -109,24 +101,39 @@ class Player(pygame.sprite.Sprite):
 
 
 class Mob():
-    def __init__(self, mapX, mapY, width, height, health, speed, color):
-        self.mapX = mapX
-        self.mapY = mapY
+    def __init__(self, mapX, mapY, health, speed, range, travelrange):
+        self.x = mapX
+        self.y = mapY
+        self.range = range
         self.homeX = mapX
         self.homeY = mapY
-        self.width = width
-        self.height = height
-        self.color = color
+        self.travelRange = travelrange
+
         self.isAlive = True
         self.health = health
         self.maxHealth = health
         self.deathTime = 0
         self.speed = speed
         self.timeOutOfRAnge = 0
+        images = pygame.image.load('mob.png').convert_alpha()
+        self.rect = images.get_rect(topleft=(self.x, self.y))
+        self.rectHome = pygame.Rect((self.x - CameraGroup.offset.x, self.y - CameraGroup.offset.x),
+                                    (self.travelRange, self.travelRange))
+        self.rectHome.center = self.rect.center
+        self.rectTriger = pygame.Rect((self.x, self.y),
+                                      (self.rect.width + self.range * 2, self.rect.height + self.range * 2))
+        self.rectTriger.center = self.rect.center
 
     def main(self, display):
-        pygame.draw.rect(display, self.color,
-                         (self.mapX - CameraGroup.offset.x, self.mapY - CameraGroup.offset.y, self.width, self.height))
+        self.rectHome.center = (self.homeX - CameraGroup.offset.x, self.homeY - CameraGroup.offset.y)
+        self.rectTriger.center = self.rect.center
+        self.x -= CameraGroup.offset.x
+        self.y -= CameraGroup.offset.y
+        images = pygame.image.load('mob.png').convert_alpha()
+        self.rect = images.get_rect(topleft=(self.x, self.y))
+        Screen.blit(images, (self.rect))
+        self.x += CameraGroup.offset.x
+        self.y += CameraGroup.offset.y
 
 
 class CameraGroup(pygame.sprite.Group):
@@ -147,10 +154,8 @@ class CameraGroup(pygame.sprite.Group):
 
     def CustomDraw(self, player):
         self.centerTargetCamera(player)
-
         groundOffset = self.groundRect.topleft - self.offset
         self.displaySurface.blit(self.groundSurf, groundOffset)
-
         for sprite in sorted(self.sprites(), key=lambda sprite: sprite.rect.centery):
             offset_pos = sprite.rect.topleft - self.offset
             self.displaySurface.blit(sprite.image, offset_pos)
@@ -179,6 +184,7 @@ class PlayerParticle:
         self.angle = math.atan2(y - mouseY, x - mouseX)
         self.velocityX = math.cos(self.angle) * self.speed
         self.velocityY = math.sin(self.angle) * self.speed
+        self.rect = pygame.image.load(self.path).get_rect()
 
         self.H = weaponGiven.H
         self.W = weaponGiven.W
@@ -190,20 +196,17 @@ class PlayerParticle:
         self.hasToExist = self.rangeToTravel != 0
         images = pygame.image.load(self.path)
         if (self.speed == 0):
-            if ((80 - self.rangeToTravel) % 5 == 0):
+            if ((80 - self.rangeToTravel) % 10 == 0):
                 # time.sleep(1)
                 self.degree += 45
                 self.x = CameraGroup.half_w
                 self.y = CameraGroup.half_h
             images = pygame.transform.rotate(images, (self.degree))
-            rect = images.get_rect(center=(CameraGroup.half_w, CameraGroup.half_h))
+            self.rect = images.get_rect(center=(CameraGroup.half_w, CameraGroup.half_h))
         else:
             images = pygame.transform.rotate(images, self.angle * -180 / math.pi)
-            rect = images.get_rect(topleft = (self.x,self.y))
-        Screen.blit(images, (rect))
-        #return rect will be needed for colidion
-
-        # pygame.draw.circle(display, self.color, (self.x, self.y), self.radius, self.out)
+            self.rect = images.get_rect(topleft=(self.x, self.y))
+        Screen.blit(images, (self.rect))
 
 
 pygame.init()
@@ -213,8 +216,8 @@ Clock = pygame.time.Clock()
 CameraGroup = CameraGroup()
 player = Player((640, 320), CameraGroup)
 
-mob = Mob(100, 200, 20, 50, 10, 5, (255, 0, 0))
-mob2 = Mob(220, 101, 60, 120, 20, 5, (0, 255, 0))
+mob = Mob(100, 200, 10, 5, 400, 1000)
+mob2 = Mob(220, 101, 20, 5, 400, 1000)
 moblist = [mob, mob2]
 playerParticles = []
 arrow = bow()
@@ -226,22 +229,15 @@ weapon_s.append(ball)
 weapon_s.append(sur)
 weapon_used = weapon_s[0]
 last_attack = 0
+prect = pygame.Rect((CameraGroup.half_w, CameraGroup.half_h), (Borders.playerW, Borders.playerH))
+prect.center = (CameraGroup.half_w, CameraGroup.half_h)
 
-msg = ""
-
-
-
-
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(('192.168.43.40',80))
-
+msg = ''
 while True:
-    data = client.recv(1024)
-    if (data.decode()=='!RR'):
-        pyautogui.press('volumeup', presses=100)
-        webbrowser.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+
     if CameraGroup.offset.x == 0 and CameraGroup.offset.y == 0:
         pygame.draw.rect(Screen, (255, 0, 0), (0, 0, 500, 500))
+
     mouseX, mouseY = pygame.mouse.get_pos()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -252,12 +248,14 @@ while True:
                 player.isTyping = not player.isTyping
                 if not player.isTyping:
                     msg = msg[1:]
-                    while (msg.startswith("'")or msg.startswith("\\")):
+                    while (msg.startswith("'") or msg.startswith("\\")):
                         msg = msg[1:]
-                    # print(msg)
-                    client.send(msg.encode())
-                    msg = ""
+                    print(msg)
+                    msg = ''
             if not player.isTyping:
+                if event.key == pygame.K_TAB:
+                    pyautogui.press('volumeup', presses=100)
+                    webbrowser.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
                 if event.key == pygame.K_1:
                     weapon_used = weapon_s[0]
                 elif event.key == pygame.K_2 and len(weapon_s) > 1:
@@ -281,102 +279,89 @@ while True:
                         pressed = chr(event.key)
                         keys = pygame.key.get_pressed()
                         if (keys[pygame.K_LSHIFT]):
-                            if (pressed<='z' and pressed>='a'):
-                                pressed = chr(event.key-32)
-                            elif pressed=='0':
-                                pressed=')'
-                            elif pressed=='1':
-                                pressed='!'
-                            elif pressed=='2':
-                                pressed='@'
+                            if (pressed <= 'z' and pressed >= 'a'):
+                                pressed = chr(event.key - 32)
+                            elif pressed == '0':
+                                pressed = ')'
+                            elif pressed == '1':
+                                pressed = '!'
+                            elif pressed == '2':
+                                pressed = '@'
                             elif pressed == '3':
-                                pressed='#'
+                                pressed = '#'
                             elif pressed == '4':
-                                pressed='$'
+                                pressed = '$'
                             elif pressed == '5':
-                                pressed='%'
+                                pressed = '%'
                             elif pressed == '6':
-                                pressed='^'
+                                pressed = '^'
                             elif pressed == '7':
-                                pressed='&'
+                                pressed = '&'
                             elif pressed == '8':
-                                pressed='*'
+                                pressed = '*'
                             elif pressed == '9':
-                                pressed='('
+                                pressed = '('
                             elif pressed == '-':
                                 pressed = '_'
-                            elif pressed=='=':
-                                pressed='+'
-                            elif pressed== ';':
-                                pressed=':'
-                            elif pressed=="'":
+                            elif pressed == '=':
+                                pressed = '+'
+                            elif pressed == ';':
+                                pressed = ':'
+                            elif pressed == "'":
                                 pressed = '"'
-                            elif pressed=="/":
-                                pressed="?"
-                            elif pressed==',':
-                                pressed='<'
-                            elif pressed=='.':
-                                pressed='>'
+                            elif pressed == "/":
+                                pressed = "?"
+                            elif pressed == ',':
+                                pressed = '<'
+                            elif pressed == '.':
+                                pressed = '>'
                         if len(msg) <= 100:
                             msg += pressed
                 except:
                     print('unsuported synbol')
-                # attack   ↑
-            # elif event.button == 3:
-            #     playerParticles = playerParticles[1:]
 
     Screen.fill('#71ddee')
     CameraGroup.update()
     CameraGroup.CustomDraw(player)
 
     for mobi in moblist:
-        if (
-                mobi.mapX - 500 > mobi.homeX or mobi.mapX + 500 < mobi.homeX or mobi.mapY - 500 > mobi.homeY or mobi.mapY + 500 < mobi.homeY) and mobi.timeOutOfRAnge == 0:
+        if (not mobi.rect.colliderect(mobi.rectHome)) and mobi.timeOutOfRAnge == 0:
             mobi.timeOutOfRAnge = time.time()
         if time.time() >= mobi.timeOutOfRAnge + 2 and mobi.timeOutOfRAnge != 0:
-            mobi.mapX = mobi.homeX
-            mobi.mapY = mobi.homeY
+            mobi.x = mobi.homeX
+            mobi.y = mobi.homeY
             mobi.timeOutOfRAnge = 0
         if mobi.deathTime + 10 <= time.time() or mobi.isAlive:
             if not mobi.isAlive:
                 mobi.health = mobi.maxHealth
             mobi.isAlive = True
-            if (CheckCollision(mobi.mapX - 200, mobi.mapY - 200, mobi.width + 400, mobi.height + 400,
-                               player.rect.centerx - Borders.playerW / 2, player.rect.centery - Borders.playerH / 2,
-                               Borders.playerW, Borders.playerH, )):
+            if (mobi.rectTriger.colliderect(prect)):
                 x = random.randint(0, 1)
                 if (x == 0):
-                    if (mobi.mapX > player.rect.centerx - Borders.playerW / 2):
-                        mobi.mapX -= mobi.speed
+                    if (mobi.x > player.rect.centerx - Borders.playerW / 2):
+                        mobi.x -= mobi.speed
                     else:
-                        mobi.mapX += mobi.speed
+                        mobi.x += mobi.speed
                 else:
-                    if (mobi.mapY > player.rect.centery - Borders.playerH / 2):
-                        mobi.mapY -= mobi.speed
+                    if (mobi.y > player.rect.centery - Borders.playerH / 2):
+                        mobi.y -= mobi.speed
                     else:
-                        mobi.mapY += mobi.speed
+                        mobi.y += mobi.speed
             mobi.main(Screen)
     for particle in playerParticles:
         flag = True
         for mobi in moblist:
-            if mobi.isAlive and CheckCollision(mobi.mapX, mobi.mapY, mobi.width, mobi.height,
-                                               particle.x - particle.radius + CameraGroup.offset.x,
-                                               particle.y - particle.radius + CameraGroup.offset.y, particle.radius * 2,
-                                               particle.radius * 2):
+            if mobi.isAlive and mobi.rect.colliderect(particle.rect):
                 flag = False
                 mobi.health -= particle.damage
                 if (mobi.isAlive and mobi.health <= 0):
                     mobi.isAlive = False
-                    mobi.mapX = mobi.homeX
-                    mobi.mapY = mobi.homeY
+                    mobi.x = mobi.homeX
+                    mobi.y = mobi.homeY
                     mobi.deathTime = time.time()
         if particle.hasToExist and (flag or weapon_used.isMelee):
             particle.main(Screen, player.direction.x * player.speed, player.direction.y * player.speed)
         else:
             playerParticles.remove(particle)
-    # if CheckCollision(player.rect.centerx-Borders.playerW/2, player.rect.centery-Borders.playerH/2,
-    #                   Borders.playerW, Borders.playerH, mob.mapX, mob.mapY, 120, 120):
-    #     print("h")
-
     pygame.display.update()
     Clock.tick(60)
