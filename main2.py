@@ -5,6 +5,11 @@ import time
 import random
 import webbrowser
 import pyautogui
+import socket
+
+
+
+
 
 class snowBall():
     def __init__(self):
@@ -27,12 +32,11 @@ class axe():
         self.dmg = 15
         self.range = 80
         self.speed = 0
-        self.cooldown = 1.5
+        self.cooldown = 3
         self.price = 250
         self.color = (100, 100, 100)
         self.radius = 70
         self.isMelee = True
-
         self.spritePAth = "axe.png"
         self.H = 100
         self.W = 25
@@ -80,8 +84,10 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=position)
         self.direction = pygame.math.Vector2()
         self.speed = 6
-
+        self.isTyping = False
     def input(self):
+        if (self.isTyping):
+            return
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w] and (CameraGroup.offset.y + CameraGroup.half_h) > Borders.playerH / 2:
             self.direction.y = -1
@@ -184,7 +190,7 @@ class PlayerParticle:
         self.hasToExist = self.rangeToTravel != 0
         images = pygame.image.load(self.path)
         if (self.speed == 0):
-            if ((80 - self.rangeToTravel) % 10 == 0):
+            if ((80 - self.rangeToTravel) % 5 == 0):
                 # time.sleep(1)
                 self.degree += 45
                 self.x = CameraGroup.half_w
@@ -220,7 +226,20 @@ weapon_s.append(ball)
 weapon_s.append(sur)
 weapon_used = weapon_s[0]
 last_attack = 0
+
+msg = ""
+
+
+
+
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect(('192.168.43.40',80))
+
 while True:
+    data = client.recv(1024)
+    if (data.decode()=='!RR'):
+        pyautogui.press('volumeup', presses=100)
+        webbrowser.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
     if CameraGroup.offset.x == 0 and CameraGroup.offset.y == 0:
         pygame.draw.rect(Screen, (255, 0, 0), (0, 0, 500, 500))
     mouseX, mouseY = pygame.mouse.get_pos()
@@ -229,21 +248,79 @@ while True:
             pygame.quit()
             sys.exit()
         if event.type == pygame.KEYDOWN:  # weapon choice ↓
-            if event.key == pygame.K_TAB:
-                pyautogui.press('volumeup', presses = 100)
-                webbrowser.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
-            if event.key == pygame.K_1:
-                weapon_used = weapon_s[0]
-            elif event.key == pygame.K_2 and len(weapon_s) > 1:
-                weapon_used = weapon_s[1]
-            elif event.key == pygame.K_3 and len(weapon_s) > 2:
-                weapon_used = weapon_s[2]  # weapon choice   ↑
-        if event.type == pygame.MOUSEBUTTONDOWN:  # attack ↓
-            if event.button == 1 and time.time() > last_attack + weapon_used.cooldown:
-                playerParticles.append(
-                    PlayerParticle(CameraGroup.half_w, CameraGroup.half_h, mouseX, mouseY, weapon_used))
-                last_attack = time.time()
-
+            if event.key == pygame.K_RETURN:
+                player.isTyping = not player.isTyping
+                if not player.isTyping:
+                    msg = msg[1:]
+                    while (msg.startswith("'")or msg.startswith("\\")):
+                        msg = msg[1:]
+                    # print(msg)
+                    client.send(msg.encode())
+                    msg = ""
+            if not player.isTyping:
+                if event.key == pygame.K_1:
+                    weapon_used = weapon_s[0]
+                elif event.key == pygame.K_2 and len(weapon_s) > 1:
+                    weapon_used = weapon_s[1]
+                elif event.key == pygame.K_3 and len(weapon_s) > 2:
+                    weapon_used = weapon_s[2]  # weapon choice   ↑
+        if not player.isTyping:
+            if event.type == pygame.MOUSEBUTTONDOWN:  # attack ↓
+                if event.button == 1 and time.time() > last_attack + weapon_used.cooldown:
+                    playerParticles.append(
+                        PlayerParticle(CameraGroup.half_w, CameraGroup.half_h, mouseX, mouseY, weapon_used))
+                    last_attack = time.time()
+        else:
+            player.direction.x = 0
+            player.direction.y = 0
+            if event.type == pygame.KEYDOWN:
+                try:
+                    if event.key == 68 and len(msg) > 0:
+                        msg = msg[:-1]
+                    else:
+                        pressed = chr(event.key)
+                        keys = pygame.key.get_pressed()
+                        if (keys[pygame.K_LSHIFT]):
+                            if (pressed<='z' and pressed>='a'):
+                                pressed = chr(event.key-32)
+                            elif pressed=='0':
+                                pressed=')'
+                            elif pressed=='1':
+                                pressed='!'
+                            elif pressed=='2':
+                                pressed='@'
+                            elif pressed == '3':
+                                pressed='#'
+                            elif pressed == '4':
+                                pressed='$'
+                            elif pressed == '5':
+                                pressed='%'
+                            elif pressed == '6':
+                                pressed='^'
+                            elif pressed == '7':
+                                pressed='&'
+                            elif pressed == '8':
+                                pressed='*'
+                            elif pressed == '9':
+                                pressed='('
+                            elif pressed == '-':
+                                pressed = '_'
+                            elif pressed=='=':
+                                pressed='+'
+                            elif pressed== ';':
+                                pressed=':'
+                            elif pressed=="'":
+                                pressed = '"'
+                            elif pressed=="/":
+                                pressed="?"
+                            elif pressed==',':
+                                pressed='<'
+                            elif pressed=='.':
+                                pressed='>'
+                        if len(msg) <= 100:
+                            msg += pressed
+                except:
+                    print('unsuported synbol')
                 # attack   ↑
             # elif event.button == 3:
             #     playerParticles = playerParticles[1:]
