@@ -108,7 +108,7 @@ class Mob():
         self.homeX = mapX
         self.homeY = mapY
         self.travelRange = travelrange
-
+        self.worth = 150
         self.isAlive = True
         self.health = health
         self.maxHealth = health
@@ -227,10 +227,10 @@ weapon_used = weapon_s[0]
 last_attack = 0
 prect = pygame.Rect((CameraGroup.half_w, CameraGroup.half_h), (Borders.playerW, Borders.playerH))
 prect.center = (CameraGroup.half_w, CameraGroup.half_h)
-inventory = [weapon_s,player.gold]
+
 msg = ''
 while True:
-
+    inventory = [weapon_s, player.gold]
     if CameraGroup.offset.x == 0 and CameraGroup.offset.y == 0:
         pygame.draw.rect(Screen, (255, 0, 0), (0, 0, 500, 500))
 
@@ -361,6 +361,7 @@ while True:
                 mobi.health -= particle.damage
                 if (mobi.isAlive and mobi.health <= 0):
                     mobi.isAlive = False
+                    player.gold+=mobi.worth
                     mobi.x = mobi.homeX
                     mobi.y = mobi.homeY
                     mobi.deathTime = time.time()
