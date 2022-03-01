@@ -8,7 +8,8 @@ import pyautogui
 
 
 class snowBall():
-    def __init__(self):
+    def __init__(self,lvl):
+        self.lvl = lvl
         self.dmg = 1
         self.range = 60
         self.speed = 8
@@ -18,24 +19,29 @@ class snowBall():
         self.color = (255, 255, 255)
         self.radius = 5
         self.isMelee = False
-
+    def __repr__(self):
+        return ("snawball lvl "+str(self.lvl))
 
 class axe():
-    def __init__(self):
+    def __init__(self,lvl):
+        self.lvl = lvl
         self.dmg = 15
         self.range = 80
         self.speed = 0
-        self.cooldown = 1.5
+        self.cooldown = 3
         self.price = 250
         self.color = (100, 100, 100)
         self.radius = 52
         self.isMelee = True
         self.spritePAth = "axe.png"
+    def __repr__(self):
+        return ("axe lvl "+str(self.lvl))
 
 
 
 class bow():
-    def __init__(self):
+    def __init__(self,lvl):
+        self.lvl = lvl
         self.dmg = 10
         self.range = 65
         self.speed = 12  # gun will be 18 speed
@@ -46,7 +52,8 @@ class bow():
         self.color = (255, 0, 0)
         self.radius = 5
         self.isMelee = False
-
+    def __repr__(self):
+        return ("bow lvl "+str(self.lvl))
 
 class Borders():
     playerH = 92
@@ -62,6 +69,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__(group)
         self.isTyping = False
         self.health = 100
+        self.gold = 0
         self.position = position
         self.image = pygame.image.load('alienBlue_stand.png').convert_alpha()
         self.image = pygame.transform.scale(self.image, (Borders.playerW, Borders.playerH))
@@ -184,7 +192,7 @@ class PlayerParticle:
         self.hasToExist = self.rangeToTravel != 0
         images = pygame.image.load(self.path)
         if (self.speed == 0):
-            if ((80 - self.rangeToTravel) % 10 == 0):
+            if ((80 - self.rangeToTravel) % 5 == 0):
                 # time.sleep(1)
                 self.degree += 45
                 self.x = CameraGroup.half_w
@@ -208,9 +216,9 @@ mob = Mob(100, 200, 10, 5, 400, 1000)
 mob2 = Mob(220, 101, 20, 5, 400, 1000)
 moblist = [mob, mob2]
 playerParticles = []
-arrow = bow()
-ball = snowBall()
-sur = axe()
+arrow = bow(1)
+ball = snowBall(1)
+sur = axe(3)
 weapon_s = []
 weapon_s.append(arrow)
 weapon_s.append(ball)
@@ -219,7 +227,7 @@ weapon_used = weapon_s[0]
 last_attack = 0
 prect = pygame.Rect((CameraGroup.half_w, CameraGroup.half_h), (Borders.playerW, Borders.playerH))
 prect.center = (CameraGroup.half_w, CameraGroup.half_h)
-
+inventory = [weapon_s,player.gold]
 msg = ''
 while True:
 
@@ -238,6 +246,14 @@ while True:
                     msg = msg[1:]
                     while (msg.startswith("'") or msg.startswith("\\")):
                         msg = msg[1:]
+                    if '!inventory'.startswith(msg) and len(msg)>1:
+                        # print(inventory)
+                        msg = 'weapons: '
+                        for i in range (len(inventory[0])):
+                            msg+=str(inventory[0][i])
+                            msg+=', '
+                        msg+='gold: '
+                        msg+=str(inventory[1])
                     print(msg)
                     msg = ''
             if not player.isTyping:
@@ -318,6 +334,7 @@ while True:
         if time.time() >= mobi.timeOutOfRAnge + 2 and mobi.timeOutOfRAnge != 0:
             mobi.x = mobi.homeX
             mobi.y = mobi.homeY
+            mobi.health=mobi.maxHealth
             mobi.timeOutOfRAnge = 0
         if mobi.deathTime + 10 <= time.time() or mobi.isAlive:
             if not mobi.isAlive:
