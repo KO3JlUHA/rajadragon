@@ -5,7 +5,11 @@ import time
 import random
 import webbrowser
 import pyautogui
+import socket
 
+bufferSize = 1024
+serverAddressPort = ("127.0.0.1", 20001)
+UDPClientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 class snowBall():
     def __init__(self, lvl):
@@ -16,8 +20,7 @@ class snowBall():
         self.cooldown = 0.25
         self.price = 10 * self.lvl
         self.upgradeCost = self.lvl * 15
-        self.spritePAth = "snowball.png"
-
+        self.image = pygame.image.load("snowball.png")
         self.isMelee = False
 
     def __repr__(self):
@@ -42,8 +45,7 @@ class axe():
         self.price = self.lvl * 250
         self.upgradeCost = lvl * 300
         self.isMelee = True
-        self.spritePAth = "axe.png"
-
+        self.image = pygame.image.load("axe.png")
 
 
 
@@ -68,7 +70,7 @@ class bow():
         self.cooldown = 1
         self.price = self.lvl * 70
         self.upgradeCost = lvl * 100
-        self.spritePAth = "arrow.png"
+        self.image = pygame.image.load("arrow.png")
         self.isMelee = False
 
 
@@ -126,6 +128,20 @@ class Borders():
     blockY = 60
 
 
+class others():
+    def __init__(self):
+        self.x=0
+        self.y=0
+        self.image=pygame.image.load("alienBlue_stand.png")
+        self.image = pygame.transform.scale(self.image, (Borders.playerW, Borders.playerH))
+        self.rect = self.image.get_rect(center=(self.x,self.y))
+
+    def main(self):
+        self.rect.center=(self.x,self.y)
+        Screen.blit(self.image,self.rect)
+
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self, position, group):
         super().__init__(group)
@@ -138,7 +154,6 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=position)
         self.direction = pygame.math.Vector2()
         self.speed = 6
-
     def input(self):
         if (self.isTyping):
             return
@@ -156,10 +171,11 @@ class Player(pygame.sprite.Sprite):
             self.direction.x = -1
         else:
             self.direction.x = 0
-
     def update(self):
         self.input()
         self.rect.center += self.direction * self.speed
+
+
 
 
 class Mob():
@@ -194,9 +210,9 @@ class Mob():
         self.rect.topleft=(self.x, self.y)
         self.rectHome.center = (self.homeX - CameraGroup.offset.x, self.homeY - CameraGroup.offset.y)
         self.rectTriger.center = self.rect.center
-        pygame.draw.rect(Screen, (0, 0, 255), self.rectHome, 6)
-        pygame.draw.rect(Screen,(255,0,0),self.rectTriger,10)
-        pygame.draw.rect(Screen, (0, 255, 0), self.rect, 6)
+        # pygame.draw.rect(Screen, (0, 0, 255), self.rectHome, 6)
+        # pygame.draw.rect(Screen,(255,0,0),self.rectTriger,10)
+        # pygame.draw.rect(Screen, (0, 255, 0), self.rect, 6)
         Screen.blit(self.images, (self.rect))
         self.x += CameraGroup.offset.x
         self.y += CameraGroup.offset.y
@@ -236,7 +252,6 @@ class PlayerParticle:
             self.x = CameraGroup.half_w
             self.y = CameraGroup.half_h
         self.degree = 0
-        self.path = weaponGiven.spritePAth
         self.damage = weaponGiven.dmg
         self.cooldown = weaponGiven.cooldown
         self.rangeToTravel = weaponGiven.range
@@ -246,7 +261,7 @@ class PlayerParticle:
         self.angle = math.atan2(y - mouseY, x - mouseX)
         self.velocityX = math.cos(self.angle) * self.speed
         self.velocityY = math.sin(self.angle) * self.speed
-        self.image= pygame.image.load(self.path)
+        self.image= weaponGiven.image
         self.rect = self.image.get_rect()
 
     def main(self, display, directionX, directionY):
@@ -279,7 +294,8 @@ rectScreen = pygame.Rect((CameraGroup.offset.x,CameraGroup.offset.y),(1280,720))
 mob = Mob(100, 200, 10, 5, 400, 1000)
 mob2 = Mob(220, 101, 20, 5, 400, 1000)
 moblist = [mob, mob2]
-
+xcord=0
+ycord=0
 playerParticles = []
 mobParticles = []
 arrow = bow(100)
@@ -299,14 +315,16 @@ i = 0
 
 msg = ''
 while True:
-    rectScreen.center = prect.center
 
+
+
+
+    rectScreen.center = prect.center
     if player.health<=0:
         break
     inventory = [weapon_s, player.gold]
     if CameraGroup.offset.x == 0 and CameraGroup.offset.y == 0:
         pygame.draw.rect(Screen, (255, 0, 0), (0, 0, 500, 500))
-
     mouseX, mouseY = pygame.mouse.get_pos()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -334,6 +352,7 @@ while True:
                         msg = 'the upgrate price is: '
                         msg += str(weapon_used.upgradeCost)
                     print(msg)
+                    UDPClientSocket.sendto(msg.encode(), serverAddressPort)
                     msg = ''
             if not player.isTyping:
                 if event.key == pygame.K_TAB:
@@ -403,9 +422,25 @@ while True:
                 except:
                     x = 1
 
+
+
+
     Screen.fill('#71ddee')
     CameraGroup.update()
     CameraGroup.CustomDraw(player)
+    bytesToSend = str(player.rect.center).encode()
+    UDPClientSocket.sendto(bytesToSend, serverAddressPort)
+    reciven = UDPClientSocket.recvfrom(bufferSize)[0].decode()
+    if (reciven):
+        print(reciven)
+        (xcord,ycord) = reciven.split(',')
+        xcord=int(xcord)
+        ycord=int(ycord)
+    player2=others()
+    player2.x=xcord-CameraGroup.offset.x
+    player2.y=ycord-CameraGroup.offset.y
+    if (xcord and ycord):
+        player2.main()
 
     for mobi in moblist:
 
@@ -473,8 +508,9 @@ while True:
     # pygame.draw.rect(Screen,(0,0,255),rectScreen,20)
 
 
-    i=1
-    pygame.draw.rect(Screen, (50, 2, 5), prect,4)
+
+
+    # pygame.draw.rect(Screen, (50, 2, 5), prect,4)
     pygame.display.update()
     Clock.tick(60)
 
