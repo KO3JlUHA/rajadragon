@@ -315,10 +315,6 @@ i = 0
 
 msg = ''
 while True:
-
-
-
-
     rectScreen.center = prect.center
     if player.health<=0:
         break
@@ -428,14 +424,18 @@ while True:
     Screen.fill('#71ddee')
     CameraGroup.update()
     CameraGroup.CustomDraw(player)
+
+
     bytesToSend = str(player.rect.center).encode()
     UDPClientSocket.sendto(bytesToSend, serverAddressPort)
     reciven = UDPClientSocket.recvfrom(bufferSize)[0].decode()
     if (reciven):
-        print(reciven)
-        (xcord,ycord) = reciven.split(',')
-        xcord=int(xcord)
-        ycord=int(ycord)
+        try:
+            (xcord,ycord) = reciven.split(',')
+            xcord=int(xcord)
+            ycord=int(ycord)
+        except:
+            print(reciven)
     player2=others()
     player2.x=xcord-CameraGroup.offset.x
     player2.y=ycord-CameraGroup.offset.y
