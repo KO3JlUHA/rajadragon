@@ -8,52 +8,114 @@ import pyautogui
 
 
 class snowBall():
-    def __init__(self,lvl):
+    def __init__(self, lvl):
         self.lvl = lvl
-        self.dmg = 1
+        self.dmg = self.lvl  # == lvl
         self.range = 60
         self.speed = 8
         self.cooldown = 0.25
-        self.price = 10
+        self.price = 10 * self.lvl
+        self.upgradeCost = self.lvl * 15
         self.spritePAth = "snowball.png"
-        self.color = (255, 255, 255)
-        self.radius = 5
+
         self.isMelee = False
+
     def __repr__(self):
-        return ("snawball lvl "+str(self.lvl))
+        return ("snowball lvl " + str(self.lvl))
+
+    def upgrate(self):
+        if (player.gold >= self.upgradeCost):
+            player.gold -= self.upgradeCost
+            self.lvl += 1
+            self.price = self.lvl * 10
+            self.upgradeCost = self.lvl * 15
+            self.dmg = self.lvl
+
 
 class axe():
-    def __init__(self,lvl):
+    def __init__(self, lvl):
         self.lvl = lvl
-        self.dmg = 15
+        self.dmg = self.lvl / 4
         self.range = 80
         self.speed = 0
         self.cooldown = 3
-        self.price = 250
-        self.color = (100, 100, 100)
-        self.radius = 52
+        self.price = self.lvl * 250
+        self.upgradeCost = lvl * 300
         self.isMelee = True
         self.spritePAth = "axe.png"
-    def __repr__(self):
-        return ("axe lvl "+str(self.lvl))
 
+
+
+
+    def __repr__(self):
+        return ("axe lvl " + str(self.lvl))
+
+    def upgrate(self):
+        if (player.gold >= self.upgradeCost):
+            player.gold -= self.upgradeCost
+            self.lvl += 1
+            self.price = self.lvl * 250
+            self.upgradeCost = self.lvl * 300
+            self.dmg = self.lvl / 4
 
 
 class bow():
-    def __init__(self,lvl):
+    def __init__(self, lvl):
         self.lvl = lvl
-        self.dmg = 10
-        self.range = 65
+        self.dmg = self.lvl * 4  # =lvl*4
+        self.range = 60
         self.speed = 12  # gun will be 18 speed
         self.cooldown = 1
-        self.price = 100
+        self.price = self.lvl * 70
+        self.upgradeCost = lvl * 100
         self.spritePAth = "arrow.png"
-        # w
-        self.color = (255, 0, 0)
-        self.radius = 5
         self.isMelee = False
+
+
+
+
     def __repr__(self):
-        return ("bow lvl "+str(self.lvl))
+        return ("bow lvl " + str(self.lvl))
+
+    def upgrate(self):
+        if (player.gold >= self.upgradeCost):
+            player.gold -= self.upgradeCost
+            self.lvl += 1
+            self.price = self.lvl * 70
+            self.upgradeCost = self.lvl * 100
+            self.dmg = self.lvl * 4
+
+
+class spear():
+    def __init__(self, x, y, aimx, aimy):
+        self.x = x
+        self.y = y
+        self.aimx = aimx
+        self.aimy = aimy
+        self.dmg = 10
+        self.range = 60
+        self.speed = 8
+        self.cooldown = 1.5
+        self.path = "arrow.png"
+
+        self.angle = math.atan2(y - aimy, x - aimx)
+        self.velocityX = math.cos(self.angle) * self.speed
+        self.velocityY = math.sin(self.angle) * self.speed
+        self.image = pygame.image.load(self.path)
+        self.rect = self.image.get_rect()
+        self.image = pygame.transform.rotate(self.image, self.angle * -180 / math.pi)
+        self.rect = self.image.get_rect(topleft=(self.x, self.y))
+
+    def main(self, directionX, directionY):
+        self.x -= int(self.velocityX + directionX)
+        self.y -= int(self.velocityY + directionY)
+        self.range -= 1
+        if self.range == 0:
+            return
+        self.rect = self.image.get_rect(topleft=(self.x, self.y))
+        Screen.blit(self.image, self.rect)
+        # pygame.draw.rect(Screen,(255,0,0),self.rect,4)
+
 
 class Borders():
     playerH = 92
@@ -115,8 +177,10 @@ class Mob():
         self.deathTime = 0
         self.speed = speed
         self.timeOutOfRAnge = 0
-        images = pygame.image.load('mob.png').convert_alpha()
-        self.rect = images.get_rect(topleft=(self.x, self.y))
+        self.last_attack = 0
+        self.spears = []
+        self.images = pygame.image.load('mob.png').convert_alpha()
+        self.rect = self.images.get_rect(topleft=(self.x, self.y))
         self.rectHome = pygame.Rect((self.x - CameraGroup.offset.x, self.y - CameraGroup.offset.x),
                                     (self.travelRange, self.travelRange))
         self.rectHome.center = self.rect.center
@@ -124,14 +188,16 @@ class Mob():
                                       (self.rect.width + self.range * 2, self.rect.height + self.range * 2))
         self.rectTriger.center = self.rect.center
 
-    def main(self, display):
-        self.rectHome.center = (self.homeX - CameraGroup.offset.x, self.homeY - CameraGroup.offset.y)
-        self.rectTriger.center = self.rect.center
+    def main(self):
         self.x -= CameraGroup.offset.x
         self.y -= CameraGroup.offset.y
-        images = pygame.image.load('mob.png').convert_alpha()
-        self.rect = images.get_rect(topleft=(self.x, self.y))
-        Screen.blit(images, (self.rect))
+        self.rect.topleft=(self.x, self.y)
+        self.rectHome.center = (self.homeX - CameraGroup.offset.x, self.homeY - CameraGroup.offset.y)
+        self.rectTriger.center = self.rect.center
+        pygame.draw.rect(Screen, (0, 0, 255), self.rectHome, 6)
+        pygame.draw.rect(Screen,(255,0,0),self.rectTriger,10)
+        pygame.draw.rect(Screen, (0, 255, 0), self.rect, 6)
+        Screen.blit(self.images, (self.rect))
         self.x += CameraGroup.offset.x
         self.y += CameraGroup.offset.y
 
@@ -171,29 +237,26 @@ class PlayerParticle:
             self.y = CameraGroup.half_h
         self.degree = 0
         self.path = weaponGiven.spritePAth
-        self.weapon = weaponGiven
         self.damage = weaponGiven.dmg
         self.cooldown = weaponGiven.cooldown
-        self.price = weaponGiven.price
         self.rangeToTravel = weaponGiven.range
-        # self.color = weaponGiven.color
-        self.radius = weaponGiven.radius
         self.mouseX = mouseX
         self.mouseY = mouseY
         self.hasToExist = True
         self.angle = math.atan2(y - mouseY, x - mouseX)
         self.velocityX = math.cos(self.angle) * self.speed
         self.velocityY = math.sin(self.angle) * self.speed
-        self.rect = pygame.image.load(self.path).get_rect()
+        self.image= pygame.image.load(self.path)
+        self.rect = self.image.get_rect()
+
     def main(self, display, directionX, directionY):
         self.x -= int(self.velocityX + directionX)
         self.y -= int(self.velocityY + directionY)
         self.rangeToTravel -= 1
         self.hasToExist = self.rangeToTravel != 0
-        images = pygame.image.load(self.path)
+        images=self.image
         if (self.speed == 0):
             if ((80 - self.rangeToTravel) % 5 == 0):
-                # time.sleep(1)
                 self.degree += 45
                 self.x = CameraGroup.half_w
                 self.y = CameraGroup.half_h
@@ -210,15 +273,18 @@ Screen = pygame.display.set_mode((1280, 720))
 Clock = pygame.time.Clock()
 
 CameraGroup = CameraGroup()
-player = Player((640, 320), CameraGroup)
+player = Player((1000, 320), CameraGroup)
+rectScreen = pygame.Rect((CameraGroup.offset.x,CameraGroup.offset.y),(1280,720))
 
 mob = Mob(100, 200, 10, 5, 400, 1000)
 mob2 = Mob(220, 101, 20, 5, 400, 1000)
 moblist = [mob, mob2]
+
 playerParticles = []
-arrow = bow(1)
-ball = snowBall(1)
-sur = axe(3)
+mobParticles = []
+arrow = bow(100)
+ball = snowBall(100)
+sur = axe(100)
 weapon_s = []
 weapon_s.append(arrow)
 weapon_s.append(ball)
@@ -227,9 +293,16 @@ weapon_used = weapon_s[0]
 last_attack = 0
 prect = pygame.Rect((CameraGroup.half_w, CameraGroup.half_h), (Borders.playerW, Borders.playerH))
 prect.center = (CameraGroup.half_w, CameraGroup.half_h)
+rectScreen.center=prect.center
+
+i = 0
 
 msg = ''
 while True:
+    rectScreen.center = prect.center
+
+    if player.health<=0:
+        break
     inventory = [weapon_s, player.gold]
     if CameraGroup.offset.x == 0 and CameraGroup.offset.y == 0:
         pygame.draw.rect(Screen, (255, 0, 0), (0, 0, 500, 500))
@@ -246,14 +319,20 @@ while True:
                     msg = msg[1:]
                     while (msg.startswith("'") or msg.startswith("\\")):
                         msg = msg[1:]
-                    if '!inventory'.startswith(msg) and len(msg)>1:
-                        # print(inventory)
+                    if '!inventory'.startswith(msg) and len(msg) > 1:
                         msg = 'weapons: '
-                        for i in range (len(inventory[0])):
-                            msg+=str(inventory[0][i])
-                            msg+=', '
-                        msg+='gold: '
-                        msg+=str(inventory[1])
+                        for i in range(len(inventory[0])):
+                            msg += str(inventory[0][i])
+                            msg += ', '
+                        msg += 'gold: '
+                        msg += str(inventory[1])
+                    if ('!upgrate'.startswith(msg) and len(msg) > 1):
+                        weapon_used.upgrate()
+                        msg = 'new lvl is '
+                        msg += str(weapon_used.lvl)
+                    if ('!price'.startswith(msg) and len(msg) > 1):
+                        msg = 'the upgrate price is: '
+                        msg += str(weapon_used.upgradeCost)
                     print(msg)
                     msg = ''
             if not player.isTyping:
@@ -282,7 +361,7 @@ while True:
                     else:
                         pressed = chr(event.key)
                         keys = pygame.key.get_pressed()
-                        if (keys[pygame.K_LSHIFT]):
+                        if (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]):
                             if (pressed <= 'z' and pressed >= 'a'):
                                 pressed = chr(event.key - 32)
                             elif pressed == '0':
@@ -322,25 +401,32 @@ while True:
                         if len(msg) <= 100:
                             msg += pressed
                 except:
-                    print('unsuported synbol')
+                    x = 1
 
     Screen.fill('#71ddee')
     CameraGroup.update()
     CameraGroup.CustomDraw(player)
 
     for mobi in moblist:
+
         if (not mobi.rect.colliderect(mobi.rectHome)) and mobi.timeOutOfRAnge == 0:
             mobi.timeOutOfRAnge = time.time()
         if time.time() >= mobi.timeOutOfRAnge + 2 and mobi.timeOutOfRAnge != 0:
             mobi.x = mobi.homeX
             mobi.y = mobi.homeY
-            mobi.health=mobi.maxHealth
+            mobi.health = mobi.maxHealth
             mobi.timeOutOfRAnge = 0
-        if mobi.deathTime + 10 <= time.time() or mobi.isAlive:
+        if mobi.deathTime + 10 <= time.time() or mobi.isAlive:#respawn or still alive
             if not mobi.isAlive:
                 mobi.health = mobi.maxHealth
+                mobi.spears=[]
+                mobi.main()
             mobi.isAlive = True
-            if (mobi.rectTriger.colliderect(prect)):
+            if (mobi.rectTriger.colliderect(prect) and mobi.isAlive and i!=0):
+                if (mobi.last_attack + 1.5 < time.time()):
+                    spr = spear(mobi.x-CameraGroup.offset.x, mobi.y-CameraGroup.offset.y, CameraGroup.half_w, CameraGroup.half_h)
+                    mobi.last_attack = time.time()
+                    mobi.spears.append(spr)
                 x = random.randint(0, 1)
                 if (x == 0):
                     if (mobi.x > player.rect.centerx - Borders.playerW / 2):
@@ -352,7 +438,19 @@ while True:
                         mobi.y -= mobi.speed
                     else:
                         mobi.y += mobi.speed
-            mobi.main(Screen)
+            for particle in mobi.spears:
+                if particle.rect.colliderect(prect):
+                    player.health-=particle.dmg
+                    print(player.health)
+                    particle.range=0
+                if particle.range==0:
+                    mobi.spears.remove(particle)
+                else:
+                    particle.main(player.direction.x*player.speed,player.direction.y*player.speed)
+
+            mobi.main()
+
+
     for particle in playerParticles:
         flag = True
         for mobi in moblist:
@@ -361,13 +459,23 @@ while True:
                 mobi.health -= particle.damage
                 if (mobi.isAlive and mobi.health <= 0):
                     mobi.isAlive = False
-                    player.gold+=mobi.worth
+                    player.gold += mobi.worth
                     mobi.x = mobi.homeX
                     mobi.y = mobi.homeY
                     mobi.deathTime = time.time()
+
+
         if particle.hasToExist and (flag or weapon_used.isMelee):
             particle.main(Screen, player.direction.x * player.speed, player.direction.y * player.speed)
         else:
             playerParticles.remove(particle)
+    # pygame.draw.rect(Screen,(255,0,0),prect,4)
+    # pygame.draw.rect(Screen,(0,0,255),rectScreen,20)
+
+
+    i=1
+    pygame.draw.rect(Screen, (50, 2, 5), prect,4)
     pygame.display.update()
     Clock.tick(60)
+
+
