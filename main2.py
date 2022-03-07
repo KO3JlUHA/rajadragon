@@ -11,6 +11,7 @@ bufferSize = 1024
 serverAddressPort = ("127.0.0.1", 20001)
 UDPClientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+
 class snowBall():
     def __init__(self, lvl):
         self.lvl = lvl
@@ -47,8 +48,6 @@ class axe():
         self.isMelee = True
         self.image = pygame.image.load("axe.png")
 
-
-
     def __repr__(self):
         return ("axe lvl " + str(self.lvl))
 
@@ -72,9 +71,6 @@ class bow():
         self.upgradeCost = lvl * 100
         self.image = pygame.image.load("arrow.png")
         self.isMelee = False
-
-
-
 
     def __repr__(self):
         return ("bow lvl " + str(self.lvl))
@@ -130,16 +126,15 @@ class Borders():
 
 class others():
     def __init__(self):
-        self.x=0
-        self.y=0
-        self.image=pygame.image.load("alienBlue_stand.png")
+        self.x = 0
+        self.y = 0
+        self.image = pygame.image.load("alienBlue_stand.png")
         self.image = pygame.transform.scale(self.image, (Borders.playerW, Borders.playerH))
-        self.rect = self.image.get_rect(center=(self.x,self.y))
+        self.rect = self.image.get_rect(center=(self.x, self.y))
 
     def main(self):
-        self.rect.center=(self.x,self.y)
-        Screen.blit(self.image,self.rect)
-
+        self.rect.center = (self.x, self.y)
+        Screen.blit(self.image, self.rect)
 
 
 class Player(pygame.sprite.Sprite):
@@ -154,6 +149,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=position)
         self.direction = pygame.math.Vector2()
         self.speed = 6
+
     def input(self):
         if (self.isTyping):
             return
@@ -171,11 +167,10 @@ class Player(pygame.sprite.Sprite):
             self.direction.x = -1
         else:
             self.direction.x = 0
+
     def update(self):
         self.input()
         self.rect.center += self.direction * self.speed
-
-
 
 
 class Mob():
@@ -207,7 +202,7 @@ class Mob():
     def main(self):
         self.x -= CameraGroup.offset.x
         self.y -= CameraGroup.offset.y
-        self.rect.topleft=(self.x, self.y)
+        self.rect.topleft = (self.x, self.y)
         self.rectHome.center = (self.homeX - CameraGroup.offset.x, self.homeY - CameraGroup.offset.y)
         self.rectTriger.center = self.rect.center
         # pygame.draw.rect(Screen, (0, 0, 255), self.rectHome, 6)
@@ -261,7 +256,7 @@ class PlayerParticle:
         self.angle = math.atan2(y - mouseY, x - mouseX)
         self.velocityX = math.cos(self.angle) * self.speed
         self.velocityY = math.sin(self.angle) * self.speed
-        self.image= weaponGiven.image
+        self.image = weaponGiven.image
         self.rect = self.image.get_rect()
 
     def main(self, display, directionX, directionY):
@@ -269,7 +264,7 @@ class PlayerParticle:
         self.y -= int(self.velocityY + directionY)
         self.rangeToTravel -= 1
         self.hasToExist = self.rangeToTravel != 0
-        images=self.image
+        images = self.image
         if (self.speed == 0):
             if ((80 - self.rangeToTravel) % 5 == 0):
                 self.degree += 45
@@ -289,13 +284,13 @@ Clock = pygame.time.Clock()
 
 CameraGroup = CameraGroup()
 player = Player((1000, 320), CameraGroup)
-rectScreen = pygame.Rect((CameraGroup.offset.x,CameraGroup.offset.y),(1280,720))
+rectScreen = pygame.Rect((CameraGroup.offset.x, CameraGroup.offset.y), (1280, 720))
 
 mob = Mob(100, 200, 10, 5, 400, 1000)
 mob2 = Mob(220, 101, 20, 5, 400, 1000)
 moblist = [mob, mob2]
-xcord=0
-ycord=0
+xcord = 0
+ycord = 0
 playerParticles = []
 mobParticles = []
 arrow = bow(100)
@@ -309,21 +304,23 @@ weapon_used = weapon_s[0]
 last_attack = 0
 prect = pygame.Rect((CameraGroup.half_w, CameraGroup.half_h), (Borders.playerW, Borders.playerH))
 prect.center = (CameraGroup.half_w, CameraGroup.half_h)
-rectScreen.center=prect.center
+rectScreen.center = prect.center
 
 i = 0
 
 msg = ''
+quitflag = False
 while True:
     rectScreen.center = prect.center
-    if player.health<=0:
-        break
+    if player.health <= 0:
+        quitflag = True
     inventory = [weapon_s, player.gold]
     if CameraGroup.offset.x == 0 and CameraGroup.offset.y == 0:
         pygame.draw.rect(Screen, (255, 0, 0), (0, 0, 500, 500))
     mouseX, mouseY = pygame.mouse.get_pos()
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT or quitflag:
+            UDPClientSocket.sendto('!L'.encode(), serverAddressPort)
             pygame.quit()
             sys.exit()
         if event.type == pygame.KEYDOWN:  # weapon choice ↓
@@ -418,32 +415,29 @@ while True:
                 except:
                     x = 1
 
-
-
-
     Screen.fill('#71ddee')
     CameraGroup.update()
     CameraGroup.CustomDraw(player)
-
 
     bytesToSend = str(player.rect.center).encode()
     UDPClientSocket.sendto(bytesToSend, serverAddressPort)
     reciven = UDPClientSocket.recvfrom(bufferSize)[0].decode()
     if (reciven):
         try:
-            (xcord,ycord) = reciven.split(',')
-            xcord=int(xcord)
-            ycord=int(ycord)
+            (xcord, ycord) = reciven.split(',')
+            xcord = int(xcord)
+            ycord = int(ycord)
         except:
             print(reciven)
-    player2=others()
-    player2.x=xcord-CameraGroup.offset.x
-    player2.y=ycord-CameraGroup.offset.y
+    player2 = others()
+    player2.x = xcord - CameraGroup.offset.x
+    player2.y = ycord - CameraGroup.offset.y
+    if (reciven):
+        print(reciven)
     if (xcord and ycord):
+
         player2.main()
-
     for mobi in moblist:
-
         if (not mobi.rect.colliderect(mobi.rectHome)) and mobi.timeOutOfRAnge == 0:
             mobi.timeOutOfRAnge = time.time()
         if time.time() >= mobi.timeOutOfRAnge + 2 and mobi.timeOutOfRAnge != 0:
@@ -451,15 +445,16 @@ while True:
             mobi.y = mobi.homeY
             mobi.health = mobi.maxHealth
             mobi.timeOutOfRAnge = 0
-        if mobi.deathTime + 10 <= time.time() or mobi.isAlive:#respawn or still alive
+        if mobi.deathTime + 10 <= time.time() or mobi.isAlive:  # respawn or still alive
             if not mobi.isAlive:
                 mobi.health = mobi.maxHealth
-                mobi.spears=[]
+                mobi.spears = []
                 mobi.main()
             mobi.isAlive = True
-            if (mobi.rectTriger.colliderect(prect) and mobi.isAlive and i!=0):
+            if (mobi.rectTriger.colliderect(prect) and mobi.isAlive and i != 0):
                 if (mobi.last_attack + 1.5 < time.time()):
-                    spr = spear(mobi.x-CameraGroup.offset.x, mobi.y-CameraGroup.offset.y, CameraGroup.half_w, CameraGroup.half_h)
+                    spr = spear(mobi.x - CameraGroup.offset.x, mobi.y - CameraGroup.offset.y, CameraGroup.half_w,
+                                CameraGroup.half_h)
                     mobi.last_attack = time.time()
                     mobi.spears.append(spr)
                 x = random.randint(0, 1)
@@ -475,16 +470,15 @@ while True:
                         mobi.y += mobi.speed
             for particle in mobi.spears:
                 if particle.rect.colliderect(prect):
-                    player.health-=particle.dmg
+                    player.health -= particle.dmg
                     print(player.health)
-                    particle.range=0
-                if particle.range==0:
+                    particle.range = 0
+                if particle.range == 0:
                     mobi.spears.remove(particle)
                 else:
-                    particle.main(player.direction.x*player.speed,player.direction.y*player.speed)
+                    particle.main(player.direction.x * player.speed, player.direction.y * player.speed)
 
             mobi.main()
-
 
     for particle in playerParticles:
         flag = True
@@ -499,7 +493,6 @@ while True:
                     mobi.y = mobi.homeY
                     mobi.deathTime = time.time()
 
-
         if particle.hasToExist and (flag or weapon_used.isMelee):
             particle.main(Screen, player.direction.x * player.speed, player.direction.y * player.speed)
         else:
@@ -507,11 +500,7 @@ while True:
     # pygame.draw.rect(Screen,(255,0,0),prect,4)
     # pygame.draw.rect(Screen,(0,0,255),rectScreen,20)
 
-
-
-
+    i = 1
     # pygame.draw.rect(Screen, (50, 2, 5), prect,4)
     pygame.display.update()
     Clock.tick(60)
-
-
