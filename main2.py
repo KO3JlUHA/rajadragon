@@ -9,7 +9,6 @@ import socket
 
 bufferSize = 1024
 serverAddressPort = ("127.0.0.1", 20001)
-UDPClientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 
 class snowBall():
@@ -310,6 +309,12 @@ i = 0
 
 msg = ''
 quitflag = False
+
+UDPClientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+UDPClientSocket.sendto("!hi".encode(), serverAddressPort)
+bytesToSend = str(player.rect.center).encode()
+UDPClientSocket.sendto(bytesToSend, serverAddressPort)
+
 while True:
     rectScreen.center = prect.center
     if player.health <= 0:
@@ -419,10 +424,14 @@ while True:
     CameraGroup.update()
     CameraGroup.CustomDraw(player)
 
-    bytesToSend = str(player.rect.center).encode()
-    UDPClientSocket.sendto(bytesToSend, serverAddressPort)
+    if player.direction.x or player.direction.y or len(playerParticles) > 0:
+        bytesToSend = str(player.rect.center).encode()
+        UDPClientSocket.sendto(bytesToSend, serverAddressPort)
     reciven = UDPClientSocket.recvfrom(bufferSize)[0].decode()
-    if (reciven):
+    if reciven:
+        if reciven == '!L':
+            xcord = 0
+        print(reciven)
         try:
             (xcord, ycord) = reciven.split(',')
             xcord = int(xcord)
@@ -432,10 +441,7 @@ while True:
     player2 = others()
     player2.x = xcord - CameraGroup.offset.x
     player2.y = ycord - CameraGroup.offset.y
-    if (reciven):
-        print(reciven)
-    if (xcord and ycord):
-
+    if (xcord):
         player2.main()
     for mobi in moblist:
         if (not mobi.rect.colliderect(mobi.rectHome)) and mobi.timeOutOfRAnge == 0:
