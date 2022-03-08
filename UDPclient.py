@@ -428,25 +428,31 @@ while True:
     CameraGroup.update()
     CameraGroup.CustomDraw(player)
 
+    otherPlayer = []
     if player.direction.x or player.direction.y or len(playerParticles)>0:
         bytesToSend = str(player.rect.center).encode()
         UDPClientSocket.sendto(bytesToSend, serverAddressPort)
     reciven = UDPClientSocket.recvfrom(bufferSize)[0].decode()
     if reciven:
-        if reciven=='!L':
-            xcord=0
+        reciven = reciven.replace('[','')
+        reciven = reciven.replace(']','')
+        reciven = reciven.replace("'",'')
+        reciven = reciven.replace(' ','')
+
+        #here we have cords like 1486,1094, 1798,674
         print(reciven)
-        try:
-            (xcord, ycord) = reciven.split(',')
-            xcord = int(xcord)
-            ycord = int(ycord)
-        except:
-            print(reciven)
-    player2 = others()
-    player2.x = xcord - CameraGroup.offset.x
-    player2.y = ycord - CameraGroup.offset.y
-    if (xcord):
-        player2.main()
+        for Pcords in reciven.split(','):
+            print(Pcords)
+            if Pcords!='TEMP' and Pcords != '!L':
+                (xcord, ycord) = Pcords.split('.')
+                xcord = int(xcord)
+                ycord = int(ycord)
+                player2 = others()
+                player2.x = xcord - CameraGroup.offset.x
+                player2.y = ycord - CameraGroup.offset.y
+                otherPlayer.append(player2)
+        for players in otherPlayer:
+            players.main()
     for mobi in moblist:
         if (not mobi.rect.colliderect(mobi.rectHome)) and mobi.timeOutOfRAnge == 0:
             mobi.timeOutOfRAnge = time.time()
