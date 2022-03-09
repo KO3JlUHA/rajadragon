@@ -1,4 +1,10 @@
 import socket
+import pygame
+
+
+
+
+
 
 localIP = "0.0.0.0"
 localPort = 20001
@@ -54,10 +60,22 @@ while 1:
             addresses.remove(address)
         else:
             try:
+
+
+                #get the cords out of the message
                 message=message.replace('(','')
                 message=message.replace(')','')
                 message=message.replace(' ','')
                 message=message.replace(',','.')
+
+                #TODO
+                #create a rectangle for each recivne cord
+                #check for mobs trigered
+                #move the mobs if needed and break
+
+
+                # player_rect = pygame.Rect(0, 0, 66, 92)
+                # player_rect.center=(playercords)
                 cords[addresses.index(address)]=message
 
             except:
