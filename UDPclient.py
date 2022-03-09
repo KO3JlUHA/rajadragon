@@ -11,6 +11,20 @@ bufferSize = 1024
 serverAddressPort = ("127.0.0.1", 20001)
 
 
+# ------------------------------------------------------------------------------------ toGraphic
+def drawhealth(health):  # 100*300
+    ycord = Borders.screenH - 50
+    xcord = (Borders.screenW / 2) - 150
+    healthrect = pygame.Rect((xcord, ycord), (health * 3, 30))
+    pygame.draw.rect(Screen, (0, 255, 0), healthrect)
+    xcord += health * 3
+    healthrect = pygame.Rect((xcord, ycord), ((100 - health) * 3, 30))
+    pygame.draw.rect(Screen, (255, 0, 0), healthrect)
+
+
+# ------------------------------------------------------------------------------------
+
+
 class snowBall():
     def __init__(self, lvl):
         self.lvl = lvl
@@ -117,8 +131,8 @@ class spear():
 class Borders():
     playerH = 92
     playerW = 66
-    screenH = 1300
-    screenW = 1950
+    screenH = 1080
+    screenW = 1920
     blockX = 60
     blockY = 60
 
@@ -150,26 +164,25 @@ class Player(pygame.sprite.Sprite):
         self.speed = 6
 
     def input(self):
+        self.direction.x = 0
+        self.direction.y = 0
         if (self.isTyping):
             return
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w] and (CameraGroup.offset.y + CameraGroup.half_h) > Borders.playerH / 2:
-            self.direction.y = -1
-        elif keys[pygame.K_s] and (CameraGroup.offset.y + CameraGroup.half_h) < Borders.screenH - Borders.playerH / 2:
-            self.direction.y = 1
-        else:
-            self.direction.y = 0
+            self.direction.y -= 1
+        if keys[pygame.K_s] and (CameraGroup.offset.y + CameraGroup.half_h) < Borders.screenH - Borders.playerH / 2:
+            self.direction.y += 1
 
         if keys[pygame.K_d] and (CameraGroup.offset.x + CameraGroup.half_w) < Borders.screenW - Borders.playerW / 2:
-            self.direction.x = 1
-        elif keys[pygame.K_a] and (CameraGroup.offset.x + CameraGroup.half_w) > Borders.playerW / 2:
-            self.direction.x = -1
-        else:
-            self.direction.x = 0
+            self.direction.x += 1
+        if keys[pygame.K_a] and (CameraGroup.offset.x + CameraGroup.half_w) > Borders.playerW / 2:
+            self.direction.x -= 1
 
     def update(self):
         self.input()
         self.rect.center += self.direction * self.speed
+
 
 class Mob():
     def __init__(self, mapX, mapY, health, speed, range, travelrange):
@@ -277,12 +290,12 @@ class PlayerParticle:
 
 
 pygame.init()
-Screen = pygame.display.set_mode((1280, 720))
+Screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 Clock = pygame.time.Clock()
 
 CameraGroup = CameraGroup()
 player = Player((1000, 320), CameraGroup)
-rectScreen = pygame.Rect((CameraGroup.offset.x, CameraGroup.offset.y), (1280, 720))
+rectScreen = pygame.Rect((CameraGroup.offset.x, CameraGroup.offset.y), (1920, 1080))
 
 mob = Mob(100, 200, 10, 5, 400, 1000)
 mob2 = Mob(220, 101, 20, 5, 400, 1000)
@@ -307,28 +320,24 @@ rectScreen.center = prect.center
 i = 0
 
 msg = ''
-quitflag = False
-
 
 UDPClientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 UDPClientSocket.sendto("!hi".encode(), serverAddressPort)
 bytesToSend = str(player.rect.center).encode()
 UDPClientSocket.sendto(bytesToSend, serverAddressPort)
 
-
-
-
-
 while True:
     rectScreen.center = prect.center
     if player.health <= 0:
-        quitflag = True
+        UDPClientSocket.sendto('!L'.encode(), serverAddressPort)
+        pygame.quit()
+        sys.exit()
     inventory = [weapon_s, player.gold]
     if CameraGroup.offset.x == 0 and CameraGroup.offset.y == 0:
         pygame.draw.rect(Screen, (255, 0, 0), (0, 0, 500, 500))
     mouseX, mouseY = pygame.mouse.get_pos()
     for event in pygame.event.get():
-        if event.type == pygame.QUIT or quitflag:
+        if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             UDPClientSocket.sendto('!L'.encode(), serverAddressPort)
             pygame.quit()
             sys.exit()
@@ -429,21 +438,26 @@ while True:
     CameraGroup.CustomDraw(player)
 
     otherPlayer = []
-    if player.direction.x or player.direction.y or len(playerParticles)>0:
+    fleg = False
+    for mobi in moblist:
+        if len(mobi.spears) > 0:
+            fleg = True
+
+    if player.direction.x or player.direction.y or len(playerParticles) > 0 or fleg:
         bytesToSend = str(player.rect.center).encode()
         UDPClientSocket.sendto(bytesToSend, serverAddressPort)
     reciven = UDPClientSocket.recvfrom(bufferSize)[0].decode()
     if reciven:
-        reciven = reciven.replace('[','')
-        reciven = reciven.replace(']','')
-        reciven = reciven.replace("'",'')
-        reciven = reciven.replace(' ','')
+        reciven = reciven.replace('[', '')
+        reciven = reciven.replace(']', '')
+        reciven = reciven.replace("'", '')
+        reciven = reciven.replace(' ', '')
 
-        #here we have cords like 1486,1094, 1798,674
+        # here we have cords like 1486,1094, 1798,674
         print(reciven)
         for Pcords in reciven.split(','):
             print(Pcords)
-            if Pcords!='TEMP' and Pcords != '!L':
+            if Pcords != 'TEMP' and Pcords != '!L':
                 (xcord, ycord) = Pcords.split('.')
                 xcord = int(xcord)
                 ycord = int(ycord)
@@ -514,9 +528,17 @@ while True:
         else:
             playerParticles.remove(particle)
     # pygame.draw.rect(Screen,(255,0,0),prect,4)
-    # pygame.draw.rect(Screen,(0,0,255),rectScreen,20)
+    rectt = pygame.Rect((1000, 900), (90, 90))
+    rectt.bottomright = (1920, 1080)
+
+    for i in range(6):
+        pygame.draw.rect(Screen, (100, 100, 100), rectt, 10)
+        rectt.right -= 80
 
     i = 1
+    # drawhealth(player.health)
+    drawhealth(player.health)
+
     # pygame.draw.rect(Screen, (50, 2, 5), prect,4)
     pygame.display.update()
     Clock.tick(60)
