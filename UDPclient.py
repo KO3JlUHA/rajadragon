@@ -11,6 +11,23 @@ bufferSize = 1024
 serverAddressPort = ("127.0.0.1", 20001)
 
 
+def drawgold(gold, Acoin, Dcoin, Scoin):
+    Screen.blit(Acoin, ((0, 1010), (70, 70)))
+    Screen.blit(Dcoin, ((70, 1010), (70, 70)))
+    Screen.blit(Scoin, ((35, 950), (70, 70)))
+    toadd = ''
+    if (gold >= 1000000):
+        gold = int(gold / 100000)
+        gold /= 10.0
+        toadd = 'M'
+    elif (gold >= 1000):
+        gold = int(gold / 100)
+        gold /= 10
+        toadd = 'K'
+    toShow = font.render(str(gold) + toadd, True, (255, 215, 0))
+    Screen.blit(toShow, (140, 990))
+
+
 # ------------------------------------------------------------------------------------ toGraphic
 def drawhealth(health):  # 100*300
     ycord = Borders.screenH - 50
@@ -36,6 +53,7 @@ class snowBall():
         self.upgradeCost = self.lvl * 15
         self.image = pygame.image.load("snowball.png")
         self.isMelee = False
+        self.icon = pygame.image.load('icon-cumball.png')
 
     def __repr__(self):
         return ("snowball lvl " + str(self.lvl))
@@ -60,6 +78,7 @@ class axe():
         self.upgradeCost = lvl * 300
         self.isMelee = True
         self.image = pygame.image.load("axe.png")
+        self.icon = pygame.image.load('icon-axe.png')
 
     def __repr__(self):
         return ("axe lvl " + str(self.lvl))
@@ -84,6 +103,7 @@ class bow():
         self.upgradeCost = lvl * 100
         self.image = pygame.image.load("arrow.png")
         self.isMelee = False
+        self.icon = pygame.image.load('icon-bow.png')
 
     def __repr__(self):
         return ("bow lvl " + str(self.lvl))
@@ -192,7 +212,7 @@ class Mob():
         self.homeX = mapX
         self.homeY = mapY
         self.travelRange = travelrange
-        self.worth = 150
+        self.worth = 1000
         self.isAlive = True
         self.health = health
         self.maxHealth = health
@@ -307,24 +327,37 @@ mobParticles = []
 arrow = bow(100)
 ball = snowBall(100)
 sur = axe(100)
-weapon_s = []
-weapon_s.append(arrow)
-weapon_s.append(ball)
-weapon_s.append(sur)
+weapon_s = ['', '', '', '', '', '']
+weapon_s[0] = (arrow)
+weapon_s[2] = (sur)
+weapon_s[4] = (ball)
+weapon_s[1] = (arrow)
+weapon_s[3] = (sur)
+weapon_s[5] = (ball)
+font = pygame.font.Font("freesansbold.ttf", 100)
 weapon_used = weapon_s[0]
 last_attack = 0
 prect = pygame.Rect((CameraGroup.half_w, CameraGroup.half_h), (Borders.playerW, Borders.playerH))
 prect.center = (CameraGroup.half_w, CameraGroup.half_h)
 rectScreen.center = prect.center
-
-i = 0
+turn = 0
 
 msg = ''
-
+index = 1
 UDPClientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 UDPClientSocket.sendto("!hi".encode(), serverAddressPort)
 bytesToSend = str(player.rect.center).encode()
 UDPClientSocket.sendto(bytesToSend, serverAddressPort)
+
+# ------------------------------------------------------------------------------
+coinA = pygame.image.load('Acoin.png').convert_alpha()
+coinD = pygame.image.load('Dcoin.png').convert_alpha()
+coinA = pygame.transform.scale(coinA, (70, 70))
+coinD = pygame.transform.scale(coinD, (70, 70))
+coinS = pygame.image.load('Scoin.png').convert_alpha()
+coinS = pygame.transform.scale(coinS, (70, 70))
+# _____________________________________________________________________________
+
 
 while True:
     rectScreen.center = prect.center
@@ -348,13 +381,6 @@ while True:
                     msg = msg[1:]
                     while (msg.startswith("'") or msg.startswith("\\")):
                         msg = msg[1:]
-                    if '!inventory'.startswith(msg) and len(msg) > 1:
-                        msg = 'weapons: '
-                        for i in range(len(inventory[0])):
-                            msg += str(inventory[0][i])
-                            msg += ', '
-                        msg += 'gold: '
-                        msg += str(inventory[1])
                     if ('!upgrate'.startswith(msg) and len(msg) > 1):
                         weapon_used.upgrate()
                         msg = 'new lvl is '
@@ -363,18 +389,30 @@ while True:
                         msg = 'the upgrate price is: '
                         msg += str(weapon_used.upgradeCost)
                     print(msg)
-                    UDPClientSocket.sendto(msg.encode(), serverAddressPort)
+                    # UDPClientSocket.sendto(msg.encode(), serverAddressPort)
                     msg = ''
             if not player.isTyping:
                 if event.key == pygame.K_TAB:
                     pyautogui.press('volumeup', presses=100)
                     webbrowser.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
-                if event.key == pygame.K_1:
+                if event.key == pygame.K_1 and weapon_s[0] != '':
                     weapon_used = weapon_s[0]
-                elif event.key == pygame.K_2 and len(weapon_s) > 1:
+                    index = 1
+                elif event.key == pygame.K_2 and weapon_s[1] != '':
                     weapon_used = weapon_s[1]
-                elif event.key == pygame.K_3 and len(weapon_s) > 2:
+                    index = 2
+                elif event.key == pygame.K_3 and weapon_s[2] != '':
                     weapon_used = weapon_s[2]  # weapon choice   ↑
+                    index = 3
+                elif event.key == pygame.K_4 and weapon_s[3] != '':
+                    weapon_used = weapon_s[3]  # weapon choice   ↑
+                    index = 4
+                elif event.key == pygame.K_5 and weapon_s[4] != '':
+                    weapon_used = weapon_s[4]  # weapon choice   ↑
+                    index = 5
+                elif event.key == pygame.K_6 and weapon_s[5] != '':
+                    weapon_used = weapon_s[5]  # weapon choice   ↑
+                    index = 6
         if not player.isTyping:
             if event.type == pygame.MOUSEBUTTONDOWN:  # attack ↓
                 if event.button == 1 and time.time() > last_attack + weapon_used.cooldown:
@@ -454,17 +492,18 @@ while True:
         reciven = reciven.replace(' ', '')
 
         # here we have cords like 1486,1094, 1798,674
-        print(reciven)
         for Pcords in reciven.split(','):
-            print(Pcords)
             if Pcords != 'TEMP' and Pcords != '!L':
-                (xcord, ycord) = Pcords.split('.')
-                xcord = int(xcord)
-                ycord = int(ycord)
-                player2 = others()
-                player2.x = xcord - CameraGroup.offset.x
-                player2.y = ycord - CameraGroup.offset.y
-                otherPlayer.append(player2)
+                try:
+                    (xcord, ycord) = Pcords.split('.')
+                    xcord = int(xcord)
+                    ycord = int(ycord)
+                    player2 = others()
+                    player2.x = xcord - CameraGroup.offset.x
+                    player2.y = ycord - CameraGroup.offset.y
+                    otherPlayer.append(player2)
+                except:
+                    pass
         for players in otherPlayer:
             players.main()
     for mobi in moblist:
@@ -481,7 +520,7 @@ while True:
                 mobi.spears = []
                 mobi.main()
             mobi.isAlive = True
-            if (mobi.rectTriger.colliderect(prect) and mobi.isAlive and i != 0):
+            if (mobi.rectTriger.colliderect(prect) and mobi.isAlive and turn != 0):
                 if (mobi.last_attack + 1.5 < time.time()):
                     spr = spear(mobi.x - CameraGroup.offset.x, mobi.y - CameraGroup.offset.y, CameraGroup.half_w,
                                 CameraGroup.half_h)
@@ -501,7 +540,6 @@ while True:
             for particle in mobi.spears:
                 if particle.rect.colliderect(prect):
                     player.health -= particle.dmg
-                    print(player.health)
                     particle.range = 0
                 if particle.range == 0:
                     mobi.spears.remove(particle)
@@ -530,15 +568,24 @@ while True:
     # pygame.draw.rect(Screen,(255,0,0),prect,4)
     rectt = pygame.Rect((1000, 900), (90, 90))
     rectt.bottomright = (1920, 1080)
-
+    # TODO: add a visualisation of weapon's level
     for i in range(6):
         pygame.draw.rect(Screen, (100, 100, 100), rectt, 10)
+        if weapon_s[5 - i]:
+            rectt.bottom += 10
+            rectt.right += 10
+            Screen.blit(weapon_s[5 - i].icon, rectt)
+            rectt.bottom -= 10
+            rectt.right -= 10
         rectt.right -= 80
+    for i in range(index):
+        rectt.right += 80
+    pygame.draw.rect(Screen, (255, 255, 255), rectt, 10)
 
-    i = 1
+    turn = 1
     # drawhealth(player.health)
     drawhealth(player.health)
-
+    drawgold(player.gold, coinA, coinD, coinS)
     # pygame.draw.rect(Screen, (50, 2, 5), prect,4)
     pygame.display.update()
     Clock.tick(60)
