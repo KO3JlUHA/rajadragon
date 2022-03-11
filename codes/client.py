@@ -54,8 +54,9 @@ class snowBall():
         self.image = pygame.image.load("../images/weapons/snowball.png")
         self.isMelee = False
         self.icon = pygame.image.load('../images/icons/icon-cumball.png')
+
     def upgrate(self):
-        if (player.gold >= self.upgradeCost):
+        if (player.gold >= self.upgradeCost and self.lvl < 998):
             player.gold -= self.upgradeCost
             self.lvl += 1
             self.price = self.lvl * 10
@@ -77,7 +78,7 @@ class axe():
         self.icon = pygame.image.load('../images/icons/icon-axe.png')
 
     def upgrate(self):
-        if (player.gold >= self.upgradeCost):
+        if (player.gold >= self.upgradeCosts and self.lvl < 998):
             player.gold -= self.upgradeCost
             self.lvl += 1
             self.price = self.lvl * 250
@@ -99,7 +100,7 @@ class bow():
         self.icon = pygame.image.load('../images/icons/icon-bow.png')
 
     def upgrate(self):
-        if (player.gold >= self.upgradeCost):
+        if (player.gold >= self.upgradeCost and self.lvl < 998):
             player.gold -= self.upgradeCost
             self.lvl += 1
             self.price = self.lvl * 70
@@ -375,10 +376,6 @@ while True:
                     msg = msg[1:]
                     while (msg.startswith("'") or msg.startswith("\\")):
                         msg = msg[1:]
-                    if ('!upgrate'.startswith(msg) and len(msg) > 1):
-                        weapon_used.upgrate()
-                        msg = 'new lvl is '
-                        msg += str(weapon_used.lvl)
                     if ('!price'.startswith(msg) and len(msg) > 1):
                         msg = 'the upgrate price is: '
                         msg += str(weapon_used.upgradeCost)
@@ -407,6 +404,8 @@ while True:
                 elif event.key == pygame.K_6 and weapon_s[5] != '':
                     weapon_used = weapon_s[5]  # weapon choice   ↑
                     index = 6
+                elif event.key == pygame.K_u:
+                    weapon_used.upgrate()
         if not player.isTyping:
             if event.type == pygame.MOUSEBUTTONDOWN:  # attack ↓
                 if event.button == 1 and time.time() > last_attack + weapon_used.cooldown:
@@ -534,8 +533,8 @@ while True:
             for particle in mobi.spears:
                 if particle.rect.colliderect(prect):
                     player.health -= particle.dmg
-                    if player.health<0:
-                        player.health=0
+                    if player.health < 0:
+                        player.health = 0
                     particle.range = 0
                 if particle.range == 0:
                     mobi.spears.remove(particle)
@@ -571,8 +570,8 @@ while True:
             rectt.bottom += 10
             rectt.right += 10
             Screen.blit(weapon_s[5 - i].icon, rectt)
-            toShow= fontlvl.render(str(weapon_s[5-i].lvl),True,(0,0,0))
-            Screen.blit(toShow,rectt)
+            toShow = fontlvl.render(str(weapon_s[5 - i].lvl), True, (0, 0, 0))
+            Screen.blit(toShow, rectt)
             rectt.bottom -= 10
             rectt.right -= 10
         rectt.right -= 80
