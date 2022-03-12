@@ -78,7 +78,7 @@ class axe():
         self.icon = pygame.image.load('../images/icons/icon-axe.png')
 
     def upgrate(self):
-        if (player.gold >= self.upgradeCosts and self.lvl < 998):
+        if (player.gold >= self.upgradeCost and self.lvl < 998):
             player.gold -= self.upgradeCost
             self.lvl += 1
             self.price = self.lvl * 250
@@ -203,7 +203,7 @@ class Mob():
         self.homeX = mapX
         self.homeY = mapY
         self.travelRange = travelrange
-        self.worth = 500000
+        self.worth = 150
         self.isAlive = True
         self.health = health
         self.maxHealth = health
@@ -563,14 +563,13 @@ while True:
     # pygame.draw.rect(Screen,(255,0,0),prect,4)
     rectt = pygame.Rect((1000, 900), (90, 90))
     rectt.bottomright = (1920, 1080)
-    # TODO: add a visualisation of weapon's level
     for i in range(6):
         pygame.draw.rect(Screen, (100, 100, 100), rectt, 10)
         if weapon_s[5 - i]:
             rectt.bottom += 10
             rectt.right += 10
             Screen.blit(weapon_s[5 - i].icon, rectt)
-            toShow = fontlvl.render(str(weapon_s[5 - i].lvl), True, (0, 0, 0))
+            toShow = fontlvl.render(str(weapon_s[5 - i].lvl), True, (0, 0, 100))
             Screen.blit(toShow, rectt)
             rectt.bottom -= 10
             rectt.right -= 10
