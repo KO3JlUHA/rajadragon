@@ -610,7 +610,7 @@ while True:
     for i in range(index):
         rectt.right += 80
     pygame.draw.rect(Screen, (255, 255, 255), rectt, 10)
-
+#hi
     turn = 1
     # drawhealth(player.health)
     drawhealth(player.health)
