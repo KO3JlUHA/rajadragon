@@ -16,7 +16,11 @@ def drawgold(gold, Acoin, Dcoin, Scoin):
     Screen.blit(Dcoin, ((70, 1010), (70, 70)))
     Screen.blit(Scoin, ((35, 950), (70, 70)))
     toadd = ''
-    if (gold >= 1000000):
+    if (gold >= 1000000000):
+        gold = int(gold / 100000000)
+        gold /= 10.0
+        toadd = 'T'
+    elif (gold >= 1000000):
         gold = int(gold / 100000)
         gold /= 10.0
         toadd = 'M'
@@ -75,6 +79,7 @@ class axe():
         self.upgradeCost = lvl * 300
         self.isMelee = True
         self.image = pygame.image.load("../images/weapons/axe.png")
+        self.image = pygame.transform.scale(self.image, (50, 140))
         self.icon = pygame.image.load('../images/icons/icon-axe.png')
 
     def upgrate(self):
@@ -114,7 +119,7 @@ class spear():
         self.y = y
         self.aimx = aimx
         self.aimy = aimy
-        self.dmg = 99
+        self.dmg = 10
         self.range = 60
         self.speed = 8
         self.cooldown = 1.5
@@ -146,6 +151,8 @@ class Borders():
     screenW = 1920
     blockX = 60
     blockY = 60
+    mapH = 0
+    mapW = 0
 
 
 class others():
@@ -180,12 +187,12 @@ class Player(pygame.sprite.Sprite):
         if (self.isTyping):
             return
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_w] and (CameraGroup.offset.y + CameraGroup.half_h) > Borders.playerH / 2:
+        if keys[pygame.K_w] and CameraGroup.offset.y + Borders.screenH / 2 - Borders.playerH / 2 > 0:
             self.direction.y -= 1
-        if keys[pygame.K_s] and (CameraGroup.offset.y + CameraGroup.half_h) < Borders.screenH - Borders.playerH / 2:
+        if keys[pygame.K_s] and (CameraGroup.offset.y + CameraGroup.half_h) < Borders.mapH - Borders.playerH / 2:
             self.direction.y += 1
 
-        if keys[pygame.K_d] and (CameraGroup.offset.x + CameraGroup.half_w) < Borders.screenW - Borders.playerW / 2:
+        if keys[pygame.K_d] and (CameraGroup.offset.x + CameraGroup.half_w) < Borders.mapW - Borders.playerW / 2:
             self.direction.x += 1
         if keys[pygame.K_a] and (CameraGroup.offset.x + CameraGroup.half_w) > Borders.playerW / 2:
             self.direction.x -= 1
@@ -203,7 +210,7 @@ class Mob():
         self.homeX = mapX
         self.homeY = mapY
         self.travelRange = travelrange
-        self.worth = 150
+        self.worth = 300
         self.isAlive = True
         self.health = health
         self.maxHealth = health
@@ -227,9 +234,6 @@ class Mob():
         self.rect.topleft = (self.x, self.y)
         self.rectHome.center = (self.homeX - CameraGroup.offset.x, self.homeY - CameraGroup.offset.y)
         self.rectTriger.center = self.rect.center
-        # pygame.draw.rect(Screen, (0, 0, 255), self.rectHome, 6)
-        # pygame.draw.rect(Screen,(255,0,0),self.rectTriger,10)
-        # pygame.draw.rect(Screen, (0, 255, 0), self.rect, 6)
         Screen.blit(self.images, (self.rect))
         self.x += CameraGroup.offset.x
         self.y += CameraGroup.offset.y
@@ -239,13 +243,13 @@ class CameraGroup(pygame.sprite.Group):
     def __init__(self):
         super().__init__()
         self.displaySurface = pygame.display.get_surface()
-
         self.offset = pygame.math.Vector2()
         self.half_w = self.displaySurface.get_size()[0] // 2
         self.half_h = self.displaySurface.get_size()[1] // 2
-
         self.groundSurf = pygame.image.load('../images/basics/ground2.jpg').convert_alpha()
         self.groundRect = self.groundSurf.get_rect(topleft=(0, 0))
+        Borders.mapH = self.groundRect.height
+        Borders.mapW = self.groundRect.width
 
     def centerTargetCamera(self, target):
         self.offset.x = target.rect.centerx - self.half_w
@@ -336,14 +340,12 @@ prect = pygame.Rect((CameraGroup.half_w, CameraGroup.half_h), (Borders.playerW, 
 prect.center = (CameraGroup.half_w, CameraGroup.half_h)
 rectScreen.center = prect.center
 turn = 0
-
 msg = ''
 index = 1
 UDPClientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 UDPClientSocket.sendto("!hi".encode(), serverAddressPort)
 bytesToSend = str(player.rect.center).encode()
 UDPClientSocket.sendto(bytesToSend, serverAddressPort)
-
 # _____________________________________________________________________________
 coinA = pygame.image.load('../images/coins/silver.png').convert_alpha()
 coinD = pygame.image.load('../images/coins/bronze.png').convert_alpha()
@@ -355,17 +357,22 @@ coinS = pygame.transform.scale(coinS, (70, 70))
 onfloor = []
 
 while True:
-    rectScreen.center = prect.center
+    # _____________________________________________________________________________ check for death
     if player.health <= 0:
         UDPClientSocket.sendto('!L'.encode(), serverAddressPort)
         pygame.quit()
         sys.exit()
-    inventory = [weapons_list, player.gold]
-    if CameraGroup.offset.x == 0 and CameraGroup.offset.y == 0:
-        pygame.draw.rect(Screen, (255, 0, 0), (0, 0, 500, 500))
+    # _____________________________________________________________________________
+
+    # _____________________________________________________________________________ update camera
     Screen.fill('#71ddee')
     CameraGroup.update()
     CameraGroup.CustomDraw(player)
+    # _____________________________________________________________________________ update deafolt values
+    rectScreen.center = prect.center
+    inventory = [weapons_list, player.gold]
+    # _____________________________________________________________________________
+
     mouseX, mouseY = pygame.mouse.get_pos()
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
@@ -416,14 +423,16 @@ while True:
                     onfloor.append(tmp_dict)
                     tmp = 1
                     weapon_used = ''
+                    if playerParticles and playerParticles[-1].speed == 0:
+                        playerParticles = playerParticles[0:-1]
                     for weapon in weapons_list:
                         if weapon:
                             weapon_used = weapon
                             index = tmp
                             break
                         tmp += 1
-                elif event.key == pygame.K_e:
-                    flagT= True
+                elif event.key == pygame.K_e:  # pick up weapon
+                    flagT = True
                     for droped in onfloor:
                         if not flagT:
                             break
@@ -432,9 +441,9 @@ while True:
                                 if not slot:
                                     weapons_list[weapons_list.index(slot)] = droped['weapon']
                                     onfloor.remove(droped)
-                                    flagT=False
+                                    flagT = False
                                     break
-                                    #hi
+                                    # hi
         if not player.isTyping:
             if event.type == pygame.MOUSEBUTTONDOWN and weapon_used:  # attack ↓
                 if event.button == 1 and time.time() > last_attack + weapon_used.cooldown:
@@ -493,7 +502,7 @@ while True:
                 except:
                     x = 1
     for droped in onfloor:
-        if droped['timeDropped']+10<=time.time():
+        if droped['timeDropped'] + 10 <= time.time():
             onfloor.remove(droped)
         x = droped['X'] - CameraGroup.offset.x
         y = droped['Y'] - CameraGroup.offset.y
@@ -613,9 +622,7 @@ while True:
     pygame.draw.rect(Screen, (255, 255, 255), rectt, 10)
 
     turn = 1
-    # drawhealth(player.health)
     drawhealth(player.health)
     drawgold(player.gold, coinA, coinD, coinS)
-    # pygame.draw.rect(Screen, (50, 2, 5), prect,4)
     pygame.display.update()
     Clock.tick(60)
