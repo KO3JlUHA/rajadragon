@@ -443,7 +443,7 @@ while True:
                                     onfloor.remove(droped)
                                     flagT = False
                                     break
-                                    # hi
+                                    # hie
         if not player.isTyping:
             if event.type == pygame.MOUSEBUTTONDOWN and weapon_used:  # attack ↓
                 if event.button == 1 and time.time() > last_attack + weapon_used.cooldown:
