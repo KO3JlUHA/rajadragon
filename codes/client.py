@@ -321,16 +321,16 @@ sur = axe(100)
 arrow2 = bow(999)
 ball2 = snowBall(420)
 sur2 = axe(69)
-weapon_s = ['', '', '', '', '', '']
-weapon_s[0] = (arrow)
-weapon_s[2] = (sur)
-weapon_s[4] = (ball)
-weapon_s[1] = (arrow2)
-weapon_s[3] = (sur2)
-weapon_s[5] = (ball2)
+weapons_list = ['', '', '', '', '', '']
+weapons_list[0] = (arrow)
+weapons_list[2] = (sur)
+weapons_list[4] = (ball)
+weapons_list[1] = (arrow2)
+weapons_list[3] = (sur2)
+weapons_list[5] = (ball2)
 font = pygame.font.Font("freesansbold.ttf", 100)
 fontlvl = pygame.font.Font("freesansbold.ttf", 20)
-weapon_used = weapon_s[0]
+weapon_used = weapons_list[0]
 last_attack = 0
 prect = pygame.Rect((CameraGroup.half_w, CameraGroup.half_h), (Borders.playerW, Borders.playerH))
 prect.center = (CameraGroup.half_w, CameraGroup.half_h)
@@ -344,15 +344,15 @@ UDPClientSocket.sendto("!hi".encode(), serverAddressPort)
 bytesToSend = str(player.rect.center).encode()
 UDPClientSocket.sendto(bytesToSend, serverAddressPort)
 
-# ------------------------------------------------------------------------------
+# _____________________________________________________________________________
 coinA = pygame.image.load('../images/coins/silver.png').convert_alpha()
 coinD = pygame.image.load('../images/coins/bronze.png').convert_alpha()
 coinA = pygame.transform.scale(coinA, (70, 70))
 coinD = pygame.transform.scale(coinD, (70, 70))
 coinS = pygame.image.load('../images/coins/gold.png').convert_alpha()
 coinS = pygame.transform.scale(coinS, (70, 70))
-# _____________________________________________________________________________
-
+# ______________________________________________________________________________
+onfloor = []
 
 while True:
     rectScreen.center = prect.center
@@ -360,9 +360,12 @@ while True:
         UDPClientSocket.sendto('!L'.encode(), serverAddressPort)
         pygame.quit()
         sys.exit()
-    inventory = [weapon_s, player.gold]
+    inventory = [weapons_list, player.gold]
     if CameraGroup.offset.x == 0 and CameraGroup.offset.y == 0:
         pygame.draw.rect(Screen, (255, 0, 0), (0, 0, 500, 500))
+    Screen.fill('#71ddee')
+    CameraGroup.update()
+    CameraGroup.CustomDraw(player)
     mouseX, mouseY = pygame.mouse.get_pos()
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
@@ -386,28 +389,53 @@ while True:
                 if event.key == pygame.K_TAB:
                     pyautogui.press('volumeup', presses=100)
                     webbrowser.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
-                if event.key == pygame.K_1 and weapon_s[0] != '':
-                    weapon_used = weapon_s[0]
+                if event.key == pygame.K_1 and weapons_list[0] != '':
+                    weapon_used = weapons_list[0]
                     index = 1
-                elif event.key == pygame.K_2 and weapon_s[1] != '':
-                    weapon_used = weapon_s[1]
+                elif event.key == pygame.K_2 and weapons_list[1] != '':
+                    weapon_used = weapons_list[1]
                     index = 2
-                elif event.key == pygame.K_3 and weapon_s[2] != '':
-                    weapon_used = weapon_s[2]  # weapon choice   ↑
+                elif event.key == pygame.K_3 and weapons_list[2] != '':
+                    weapon_used = weapons_list[2]  # weapon choice   ↑
                     index = 3
-                elif event.key == pygame.K_4 and weapon_s[3] != '':
-                    weapon_used = weapon_s[3]  # weapon choice   ↑
+                elif event.key == pygame.K_4 and weapons_list[3] != '':
+                    weapon_used = weapons_list[3]  # weapon choice   ↑
                     index = 4
-                elif event.key == pygame.K_5 and weapon_s[4] != '':
-                    weapon_used = weapon_s[4]  # weapon choice   ↑
+                elif event.key == pygame.K_5 and weapons_list[4] != '':
+                    weapon_used = weapons_list[4]  # weapon choice   ↑
                     index = 5
-                elif event.key == pygame.K_6 and weapon_s[5] != '':
-                    weapon_used = weapon_s[5]  # weapon choice   ↑
+                elif event.key == pygame.K_6 and weapons_list[5] != '':
+                    weapon_used = weapons_list[5]  # weapon choice   ↑
                     index = 6
                 elif event.key == pygame.K_u:
                     weapon_used.upgrate()
+                elif event.key == pygame.K_x and weapon_used:  # drop the weapon
+                    weapons_list[index - 1] = ''
+                    tmp_dict = {'weapon': weapon_used, 'X': CameraGroup.offset.x + Borders.screenW / 2,
+                                'Y': CameraGroup.offset.y + Borders.screenH / 2, 'rect': '', 'timeDropped': time.time()}
+                    onfloor.append(tmp_dict)
+                    tmp = 1
+                    weapon_used = ''
+                    for weapon in weapons_list:
+                        if weapon:
+                            weapon_used = weapon
+                            index = tmp
+                            break
+                        tmp += 1
+                elif event.key == pygame.K_e:
+                    flagT= True
+                    for droped in onfloor:
+                        if not flagT:
+                            break
+                        if prect.colliderect(droped['rect']):
+                            for slot in weapons_list:
+                                if not slot:
+                                    weapons_list[weapons_list.index(slot)] = droped['weapon']
+                                    onfloor.remove(droped)
+                                    flagT=False
+                                    break
         if not player.isTyping:
-            if event.type == pygame.MOUSEBUTTONDOWN:  # attack ↓
+            if event.type == pygame.MOUSEBUTTONDOWN and weapon_used:  # attack ↓
                 if event.button == 1 and time.time() > last_attack + weapon_used.cooldown:
                     playerParticles.append(
                         PlayerParticle(CameraGroup.half_w, CameraGroup.half_h, mouseX, mouseY, weapon_used))
@@ -463,10 +491,15 @@ while True:
                             msg += pressed
                 except:
                     x = 1
-
-    Screen.fill('#71ddee')
-    CameraGroup.update()
-    CameraGroup.CustomDraw(player)
+    for droped in onfloor:
+        if droped['timeDropped']+10<=time.time():
+            onfloor.remove(droped)
+        x = droped['X'] - CameraGroup.offset.x
+        y = droped['Y'] - CameraGroup.offset.y
+        weapon = droped["weapon"]
+        rectt = pygame.Rect((x, y), (70, 70))
+        droped['rect'] = rectt
+        Screen.blit(weapon.icon, rectt)
 
     otherPlayer = []
     fleg = False
@@ -565,11 +598,11 @@ while True:
     rectt.bottomright = (1920, 1080)
     for i in range(6):
         pygame.draw.rect(Screen, (100, 100, 100), rectt, 10)
-        if weapon_s[5 - i]:
+        if weapons_list[5 - i]:
             rectt.bottom += 10
             rectt.right += 10
-            Screen.blit(weapon_s[5 - i].icon, rectt)
-            toShow = fontlvl.render(str(weapon_s[5 - i].lvl), True, (0, 0, 100))
+            Screen.blit(weapons_list[5 - i].icon, rectt)
+            toShow = fontlvl.render(str(weapons_list[5 - i].lvl), True, (0, 0, 100))
             Screen.blit(toShow, rectt)
             rectt.bottom -= 10
             rectt.right -= 10
