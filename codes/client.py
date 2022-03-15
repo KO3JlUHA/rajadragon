@@ -540,7 +540,7 @@ while True:
                     chat = chat[1:]
                 chat.append(obj)
             # print(reciven)
-        else:
+        else:#
             reciven = reciven.replace('[', '')
             reciven = reciven.replace(']', '')
             reciven = reciven.replace("'", '')

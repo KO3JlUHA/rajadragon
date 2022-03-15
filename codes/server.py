@@ -86,7 +86,7 @@ while 1:
                 # player_rect.center=(playercords)
                 cords[addresses.index(address)]=message
 
-            except:
+            except:#
                 pass
 #-------------------------------------------------
     if not chat_flag:
