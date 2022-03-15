@@ -45,6 +45,11 @@ def drawhealth(health):  # 100*300
 
 # ------------------------------------------------------------------------------------
 
+class chatTxt():
+    def __init__(self, msg):
+        self.msg = msg
+        self.time = time.time()
+
 
 class snowBall():
     def __init__(self, lvl):
@@ -305,13 +310,13 @@ class PlayerParticle:
 
 
 pygame.init()
-Screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+Screen = pygame.display.set_mode((960, 1030))
 Clock = pygame.time.Clock()
 
 CameraGroup = CameraGroup()
 player = Player((1000, 320), CameraGroup)
 rectScreen = pygame.Rect((CameraGroup.offset.x, CameraGroup.offset.y), (1920, 1080))
-
+time_reciven = 0
 mob = Mob(100, 200, 10, 5, 400, 1000)
 mob2 = Mob(220, 101, 20, 5, 400, 1000)
 moblist = [mob, mob2]
@@ -340,12 +345,16 @@ prect = pygame.Rect((CameraGroup.half_w, CameraGroup.half_h), (Borders.playerW, 
 prect.center = (CameraGroup.half_w, CameraGroup.half_h)
 rectScreen.center = prect.center
 turn = 0
-msg = ''
+msg = '!CHAT'
+to_send = ''
 index = 1
 UDPClientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-UDPClientSocket.sendto("!hi".encode(), serverAddressPort)
-bytesToSend = str(player.rect.center).encode()
-UDPClientSocket.sendto(bytesToSend, serverAddressPort)
+# UDPClientSocket.sendto("!hi".encode(), serverAddressPort)
+bytesToSend = '!hi' + str(player.rect.center)
+UDPClientSocket.sendto(bytesToSend.encode(), serverAddressPort)
+text = ''
+chat = []
+otherParticles = []
 # _____________________________________________________________________________
 coinA = pygame.image.load('../images/coins/silver.png').convert_alpha()
 coinD = pygame.image.load('../images/coins/bronze.png').convert_alpha()
@@ -383,19 +392,18 @@ while True:
             if event.key == pygame.K_RETURN:
                 player.isTyping = not player.isTyping
                 if not player.isTyping:
-                    msg = msg[1:]
                     while (msg.startswith("'") or msg.startswith("\\")):
                         msg = msg[1:]
                     if ('!price'.startswith(msg) and len(msg) > 1):
                         msg = 'the upgrate price is: '
                         msg += str(weapon_used.upgradeCost)
-                    print(msg)
-                    # UDPClientSocket.sendto(msg.encode(), serverAddressPort)
-                    msg = ''
+                    if msg!='!CHAT':
+                        to_send = UDPClientSocket.sendto(msg.encode(), serverAddressPort)
+                    msg = '!CHAT'
             if not player.isTyping:
-                if event.key == pygame.K_TAB:
-                    pyautogui.press('volumeup', presses=100)
-                    webbrowser.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+                # if event.key == pygame.K_TAB:
+                #     pyautogui.press('volumeup', presses=100)
+                #     webbrowser.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
                 if event.key == pygame.K_1 and weapons_list[0] != '':
                     weapon_used = weapons_list[0]
                     index = 1
@@ -455,7 +463,7 @@ while True:
             player.direction.y = 0
             if event.type == pygame.KEYDOWN:
                 try:
-                    if event.key == 68 and len(msg) > 0:
+                    if event.key == 68 and len(msg) > 5:
                         msg = msg[:-1]
                     else:
                         pressed = chr(event.key)
@@ -500,7 +508,7 @@ while True:
                         if len(msg) <= 100:
                             msg += pressed
                 except:
-                    x = 1
+                    pass
     for droped in onfloor:
         if droped['timeDropped'] + 10 <= time.time():
             onfloor.remove(droped)
@@ -518,30 +526,48 @@ while True:
             fleg = True
 
     if player.direction.x or player.direction.y or len(playerParticles) > 0 or fleg:
-        bytesToSend = str(player.rect.center).encode()
-        UDPClientSocket.sendto(bytesToSend, serverAddressPort)
+        bytesToSend = '!CORDS' + str(player.rect.center)
+        UDPClientSocket.sendto(bytesToSend.encode(), serverAddressPort)
     reciven = UDPClientSocket.recvfrom(bufferSize)[0].decode()
     if reciven:
-        reciven = reciven.replace('[', '')
-        reciven = reciven.replace(']', '')
-        reciven = reciven.replace("'", '')
-        reciven = reciven.replace(' ', '')
+        if reciven.startswith('!CHAT'):
+            # todo: visuals of reciven text in client
+            reciven = reciven[6:]
+            if reciven:
+                text = fontlvl.render(str(reciven), True, (255, 255, 255))
+                obj = chatTxt(text)
+                if len(chat) == 5:
+                    chat = chat[1:]
+                chat.append(obj)
+            # print(reciven)
+        else:
+            reciven = reciven.replace('[', '')
+            reciven = reciven.replace(']', '')
+            reciven = reciven.replace("'", '')
+            reciven = reciven.replace(' ', '')
+            # here we have cords like 1486,1094, 1798,674
+            for Pcords in reciven.split(','):
+                if Pcords != 'TEMP' and Pcords != '!L':
+                    try:
+                        (xcord, ycord) = Pcords.split('.')
+                        xcord = int(xcord)
+                        ycord = int(ycord)
+                        player2 = others()
+                        player2.x = xcord - CameraGroup.offset.x
+                        player2.y = ycord - CameraGroup.offset.y
+                        otherPlayer.append(player2)
+                    except:
+                        pass
+            for players in otherPlayer:
+                players.main()
+    H = 0
+    for chatmsg in chat:
+        if chatmsg.time + 10 < time.time():
+            chat.remove(chatmsg)
+        else:
+            Screen.blit(chatmsg.msg, (0, H))
+            H += 30
 
-        # here we have cords like 1486,1094, 1798,674
-        for Pcords in reciven.split(','):
-            if Pcords != 'TEMP' and Pcords != '!L':
-                try:
-                    (xcord, ycord) = Pcords.split('.')
-                    xcord = int(xcord)
-                    ycord = int(ycord)
-                    player2 = others()
-                    player2.x = xcord - CameraGroup.offset.x
-                    player2.y = ycord - CameraGroup.offset.y
-                    otherPlayer.append(player2)
-                except:
-                    pass
-        for players in otherPlayer:
-            players.main()
     for mobi in moblist:
         if (not mobi.rect.colliderect(mobi.rectHome)) and mobi.timeOutOfRAnge == 0:
             mobi.timeOutOfRAnge = time.time()
@@ -620,7 +646,6 @@ while True:
     for i in range(index):
         rectt.right += 80
     pygame.draw.rect(Screen, (255, 255, 255), rectt, 10)
-
     turn = 1
     drawhealth(player.health)
     drawgold(player.gold, coinA, coinD, coinS)

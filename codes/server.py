@@ -2,10 +2,6 @@ import socket
 import pygame
 
 
-
-
-
-
 localIP = "0.0.0.0"
 localPort = 20001
 bufferSize = 1024
@@ -19,13 +15,13 @@ UDPServerSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 UDPServerSocket.bind((localIP, localPort))
 
 print("UDP server up and listening")
-
+chat_shit = ''
+chat_shit_ip = ''
 # Listen for incoming datagrams
 addresses=[]
 cords=[]
 UDPServerSocket.settimeout(0.1)
 while 1:
-    print(cords)
 #------------------------------------------------ cleaning the cords from left users
     for cord in cords:
         if cord=='!L':
@@ -35,6 +31,7 @@ while 1:
 #-------------------------------------------------  setting up pre needed data
     bytesAddressPair=''
     flug = False
+    chat_flag = False
 #-------------------------------------------------
 #------------------------------------------------- checking for input
     try:
@@ -49,19 +46,30 @@ while 1:
         message = bytesAddressPair[0].decode()
         address = bytesAddressPair[1]
         # -------------------------------------------------
-        if (message=='!hi'):
+        if (message.startswith('!hi')):
             addresses.append(address)
-            cords.append('TEMP')
+            message = message[3:]
+            try:
+                message=message.replace('(','')
+                message=message.replace(')','')
+                message=message.replace(' ','')
+                message=message.replace(',','.')
+            except:
+                pass
+            cords.append(message)
             flug=True
         elif message=='!':
             break
         elif message=='!L':
             cords[addresses.index(address)]=message
             addresses.remove(address)
-        else:
+        elif message.startswith('!CHAT'):
+            chat_flag = True
+            chat_shit=message
+            chat_shit_ip = address
+        elif message.startswith('!CORDS'):
             try:
-
-
+                message = message[6:]
                 #get the cords out of the message
                 message=message.replace('(','')
                 message=message.replace(')','')
@@ -81,14 +89,15 @@ while 1:
             except:
                 pass
 #-------------------------------------------------
-
-    if flug:
-            UDPServerSocket.sendto(str(cords).encode(),address)
+    if not chat_flag:
+        for ip in addresses:
+            tmp = cords[addresses.index(ip)]
+            cords[addresses.index(ip)]= 'TEMP'
+            print(cords)
+            UDPServerSocket.sendto(str(cords).encode(),ip)
+            cords[addresses.index(ip)] = tmp
     else:
         for ip in addresses:
-            # if ip!=address:
-            UDPServerSocket.sendto(str(cords).encode(),ip)
-            # else:
-            #     UDPServerSocket.sendto("".encode(),ip)
-
+            if ip != chat_shit_ip:
+                UDPServerSocket.sendto(chat_shit.encode(),ip)
 UDPServerSocket.close()
