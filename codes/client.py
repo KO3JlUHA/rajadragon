@@ -8,7 +8,7 @@ import pyautogui
 import socket
 
 bufferSize = 1024
-serverAddressPort = ("127.0.0.1", 20001)
+serverAddressPort = ("127.0.0.1", 20003)
 
 
 def drawgold(gold, Acoin, Dcoin, Scoin):
@@ -46,13 +46,14 @@ def drawhealth(health):  # 100*300
 # ------------------------------------------------------------------------------------
 
 class chatTxt():
-    def __init__(self, msg):
-        self.msg = msg
+    def __init__(self, msgC):
+        self.msgC = msgC
         self.time = time.time()
 
 
 class snowBall():
     def __init__(self, lvl):
+        self.typo = 'snawball'
         self.lvl = lvl
         self.dmg = self.lvl  # == lvl
         self.range = 60
@@ -75,6 +76,7 @@ class snowBall():
 
 class axe():
     def __init__(self, lvl):
+        self.typo = 'axe'
         self.lvl = lvl
         self.dmg = self.lvl / 4
         self.range = 80
@@ -98,6 +100,7 @@ class axe():
 
 class bow():
     def __init__(self, lvl):
+        self.typo = 'bow'
         self.lvl = lvl
         self.dmg = self.lvl * 4  # =lvl*4
         self.range = 60
@@ -310,7 +313,7 @@ class PlayerParticle:
 
 
 pygame.init()
-Screen = pygame.display.set_mode((960, 1030))
+Screen = pygame.display.set_mode((1900, 1050))
 Clock = pygame.time.Clock()
 
 CameraGroup = CameraGroup()
@@ -345,11 +348,9 @@ prect = pygame.Rect((CameraGroup.half_w, CameraGroup.half_h), (Borders.playerW, 
 prect.center = (CameraGroup.half_w, CameraGroup.half_h)
 rectScreen.center = prect.center
 turn = 0
-msg = '!CHAT'
-to_send = ''
 index = 1
 UDPClientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-# UDPClientSocket.sendto("!hi".encode(), serverAddressPort)
+msg = ''
 bytesToSend = '!hi' + str(player.rect.center)
 UDPClientSocket.sendto(bytesToSend.encode(), serverAddressPort)
 text = ''
@@ -392,14 +393,13 @@ while True:
             if event.key == pygame.K_RETURN:
                 player.isTyping = not player.isTyping
                 if not player.isTyping:
+                    msg = msg[1:]
                     while (msg.startswith("'") or msg.startswith("\\")):
                         msg = msg[1:]
-                    if ('!price'.startswith(msg) and len(msg) > 1):
-                        msg = 'the upgrate price is: '
-                        msg += str(weapon_used.upgradeCost)
-                    if msg!='!CHAT':
-                        to_send = UDPClientSocket.sendto(msg.encode(), serverAddressPort)
-                    msg = '!CHAT'
+                    msg = '!CHAT' + msg
+                    UDPClientSocket.sendto(msg.encode(), serverAddressPort)
+                else:
+                    msg = ''
             if not player.isTyping:
                 # if event.key == pygame.K_TAB:
                 #     pyautogui.press('volumeup', presses=100)
@@ -458,55 +458,60 @@ while True:
                     playerParticles.append(
                         PlayerParticle(CameraGroup.half_w, CameraGroup.half_h, mouseX, mouseY, weapon_used))
                     last_attack = time.time()
+                    mouseX += CameraGroup.offset.x
+                    mouseY += CameraGroup.offset.y
+                    tosend = '!WEAPON' + str(player.rect.center) + "." + str(int(mouseX)) + "." + str(
+                        int(mouseY)) + "." + weapon_used.typo
+                    UDPClientSocket.sendto(tosend.encode(), serverAddressPort)
+                    mouseX -= CameraGroup.offset.x
+                    mouseY -= CameraGroup.offset.y
+
         else:
             player.direction.x = 0
             player.direction.y = 0
             if event.type == pygame.KEYDOWN:
                 try:
-                    if event.key == 68 and len(msg) > 5:
-                        msg = msg[:-1]
-                    else:
-                        pressed = chr(event.key)
-                        keys = pygame.key.get_pressed()
-                        if (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]):
-                            if (pressed <= 'z' and pressed >= 'a'):
-                                pressed = chr(event.key - 32)
-                            elif pressed == '0':
-                                pressed = ')'
-                            elif pressed == '1':
-                                pressed = '!'
-                            elif pressed == '2':
-                                pressed = '@'
-                            elif pressed == '3':
-                                pressed = '#'
-                            elif pressed == '4':
-                                pressed = '$'
-                            elif pressed == '5':
-                                pressed = '%'
-                            elif pressed == '6':
-                                pressed = '^'
-                            elif pressed == '7':
-                                pressed = '&'
-                            elif pressed == '8':
-                                pressed = '*'
-                            elif pressed == '9':
-                                pressed = '('
-                            elif pressed == '-':
-                                pressed = '_'
-                            elif pressed == '=':
-                                pressed = '+'
-                            elif pressed == ';':
-                                pressed = ':'
-                            elif pressed == "'":
-                                pressed = '"'
-                            elif pressed == "/":
-                                pressed = "?"
-                            elif pressed == ',':
-                                pressed = '<'
-                            elif pressed == '.':
-                                pressed = '>'
-                        if len(msg) <= 100:
-                            msg += pressed
+                    pressed = chr(event.key)
+                    keys = pygame.key.get_pressed()
+                    if (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]):
+                        if (pressed <= 'z' and pressed >= 'a'):
+                            pressed = chr(event.key - 32)
+                        elif pressed == '0':
+                            pressed = ')'
+                        elif pressed == '1':
+                            pressed = '!'
+                        elif pressed == '2':
+                            pressed = '@'
+                        elif pressed == '3':
+                            pressed = '#'
+                        elif pressed == '4':
+                            pressed = '$'
+                        elif pressed == '5':
+                            pressed = '%'
+                        elif pressed == '6':
+                            pressed = '^'
+                        elif pressed == '7':
+                            pressed = '&'
+                        elif pressed == '8':
+                            pressed = '*'
+                        elif pressed == '9':
+                            pressed = '('
+                        elif pressed == '-':
+                            pressed = '_'
+                        elif pressed == '=':
+                            pressed = '+'
+                        elif pressed == ';':
+                            pressed = ':'
+                        elif pressed == "'":
+                            pressed = '"'
+                        elif pressed == "/":
+                            pressed = "?"
+                        elif pressed == ',':
+                            pressed = '<'
+                        elif pressed == '.':
+                            pressed = '>'
+                    if len(msg) <= 30:
+                        msg += str(pressed)
                 except:
                     pass
     for droped in onfloor:
@@ -530,42 +535,56 @@ while True:
         UDPClientSocket.sendto(bytesToSend.encode(), serverAddressPort)
     reciven = UDPClientSocket.recvfrom(bufferSize)[0].decode()
     if reciven:
-        if reciven.startswith('!CHAT'):
-            # todo: visuals of reciven text in client
-            reciven = reciven[6:]
-            if reciven:
-                text = fontlvl.render(str(reciven), True, (255, 255, 255))
-                obj = chatTxt(text)
-                if len(chat) == 5:
-                    chat = chat[1:]
-                chat.append(obj)
-            # print(reciven)
-        else:#
-            reciven = reciven.replace('[', '')
-            reciven = reciven.replace(']', '')
-            reciven = reciven.replace("'", '')
-            reciven = reciven.replace(' ', '')
-            # here we have cords like 1486,1094, 1798,674
-            for Pcords in reciven.split(','):
-                if Pcords != 'TEMP' and Pcords != '!L':
-                    try:
-                        (xcord, ycord) = Pcords.split('.')
-                        xcord = int(xcord)
-                        ycord = int(ycord)
-                        player2 = others()
-                        player2.x = xcord - CameraGroup.offset.x
-                        player2.y = ycord - CameraGroup.offset.y
-                        otherPlayer.append(player2)
-                    except:
-                        pass
-            for players in otherPlayer:
-                players.main()
+        if reciven.__contains__('!WEAPON'):
+            reciven, txt = reciven.split('!WEAPON')
+            px, py, msx, msy, typo = txt.split('.')
+            px = int(px) - CameraGroup.offset.x
+            py = int(py) - CameraGroup.offset.y
+            msx = int(msx) - CameraGroup.offset.x
+            msy = int(msy) - CameraGroup.offset.y
+            weapon_type = ''
+            if typo=='bow':
+                weapon_type=arrow
+            elif typo=='axe':
+                weapon_type=sur
+            else:
+                weapon_type = ball
+
+
+            tmpP = PlayerParticle(px, py, msx, msy, weapon_type)
+            playerParticles.append(tmpP)
+        if reciven.__contains__('!CHAT'):
+            reciven, txt = reciven.split('!CHAT')
+            text = fontlvl.render(str(txt), True, (255, 255, 255))
+            obj = chatTxt(text)
+            if len(chat) == 5:
+                chat = chat[1:]
+            chat.append(obj)
+        reciven = reciven.replace('[', '')
+        reciven = reciven.replace(']', '')
+        reciven = reciven.replace("'", '')
+        reciven = reciven.replace(' ', '')
+        # here we have cords like 1486,1094, 1798,674
+        for Pcords in reciven.split(','):
+            if Pcords != 'TEMP' and Pcords != '!L':
+                try:
+                    (xcord, ycord) = Pcords.split('.')
+                    xcord = int(xcord)
+                    ycord = int(ycord)
+                    player2 = others()
+                    player2.x = xcord - CameraGroup.offset.x
+                    player2.y = ycord - CameraGroup.offset.y
+                    otherPlayer.append(player2)
+                except:
+                    pass
+        for players in otherPlayer:
+            players.main()
     H = 0
     for chatmsg in chat:
         if chatmsg.time + 10 < time.time():
             chat.remove(chatmsg)
         else:
-            Screen.blit(chatmsg.msg, (0, H))
+            Screen.blit(chatmsg.msgC, (0, H))
             H += 30
 
     for mobi in moblist:
