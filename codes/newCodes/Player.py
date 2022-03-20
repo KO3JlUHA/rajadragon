@@ -7,6 +7,35 @@ class Sizes:
     ScreenW = 1920
 
 
+class mob:
+    def __init__(self, x, y, lvl, isMelley):
+        self.x = x
+        self.y = y
+        self.lvl = lvl
+        self.isMelley = isMelley
+        self.isAlive = True
+        self.DeathTime = 0
+        self.health = 100
+        # ---------------------- ranged --------------------------------
+        # range = 500
+        # speed = 5
+        # dmg = 4*lvl
+        # rect = pygame.Rect((x,y),(500,500))
+        # rect.center = (x,y)
+        # home_rect = pygame.Rect((x,y),(800,800))
+        # home_recr.center = (x,y)
+        # worth = 150*lvl
+
+        # ---------------------- melley --------------------------------
+        # range = on colidions
+        # speed = 15
+        # dmg = 14*lvl
+        # rect = pygame.Rect((x,y),(1200,1200))
+        # rect.center = (x,y)
+        # home_rect = pygame.Rect((x,y),(1600,1600))
+        # home_recr.center = (x,y)
+        # worth = 300*lvl
+
 
 class CameraGroup(pygame.sprite.Group):
     def __init__(self):
@@ -78,9 +107,18 @@ class PlayerParticle:
         self.velocityX = math.cos(self.angle) * self.speed
         self.velocityY = math.sin(self.angle) * self.speed
         self.name = name
+        self.Vx = self.velocityX
+        self.Vy = self.velocityY
+        self.Hit = False
 
-    def main(self):
+    def main(self, x, y):
+        if self.speed == 1:
+            self.x = x
+            self.y = y
+            self.Vy += self.velocityY
+            self.Vx += self.velocityX
         self.range -= self.speed
-        self.x -= int(self.velocityX)
-        self.y -= int(self.velocityY)
-        # pygame.draw.circle(display, (0, 0, 0), (self.x - CameraGroup.offset.x, self.y - CameraGroup.offset.y), 5)
+        self.x -= int(self.Vx)
+        self.y -= int(self.Vy)
+
+    # pygame.draw.circle(display, (0, 0, 0), (self.x - CameraGroup.offset.x, self.y - CameraGroup.offset.y), 5)

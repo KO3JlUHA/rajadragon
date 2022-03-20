@@ -7,13 +7,18 @@ import Player as pl
 localIP = "0.0.0.0"
 localPort = 20003
 bufferSize = 1024
+mobs = []
+mob = pl.mob(200, 200, 2, False)
+mobs.append(mob)
+mob = pl.mob(100, 100, 5, False)
+mobs.append(mob)
 
 # Create a datagram socket
 UDPServerSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 # Bind to address and ip
 
-
+worth = 0
 UDPServerSocket.bind((localIP, localPort))
 player_speed = 6
 players = []
@@ -26,7 +31,8 @@ while True:
     ip = bytesAddressPair[1]
     if msg == '!HI':  # "!HI"
         Data = {'IP': ip, 'X': 960, 'Y': 520, 'PARTICLES': [], 'HEALTH': 100, 'ATTACK-TIME': 0,
-                'INVENTORY': [wp.weapon(1, 'bow'), wp.weapon(2, 'bow'), wp.weapon(3, 'snowball'), wp.weapon(4, 'bow'),
+                'INVENTORY': [wp.weapon(1, 'bow'), wp.weapon(2, 'bow'), wp.weapon(3, 'snowball'),
+                              wp.weapon(400, 'dagger'),
                               wp.weapon(5, 'bow'), wp.weapon(6, 'bow')], 'PICKED': 0, 'GOLD': 0}
         players.append(Data)
         final = '!LOC|960|520'
@@ -83,8 +89,14 @@ while True:
                             speed = 10
                             range = 500
                             cooldown = 0.5
-                            dmg = player['INVENTORY'][player['PICKED']].lvl * 2
+                            dmg = player['INVENTORY'][player['PICKED']].lvl
                             name = 'snowball'
+                        elif player['INVENTORY'][player['PICKED']].name == 'dagger':
+                            speed = 1
+                            range = 60
+                            cooldown = 4
+                            dmg = player['INVENTORY'][player['PICKED']].lvl * 10
+                            name = 'dagger'
                         #  and player['INVENTORY'][player['PICKED']]
                         if player['ATTACK-TIME'] == 0 or player['ATTACK-TIME'] + cooldown <= time.time():
                             player['ATTACK-TIME'] = time.time()
@@ -102,6 +114,7 @@ while True:
     final += "$!OTHER_p|"
     h = 0
     pick = 0
+    gold = 0
     inv = "$!INV|"
     for player in players:
         if player['IP'] != ip:
@@ -117,14 +130,13 @@ while True:
         else:
             h = player['HEALTH']
             pick = player['PICKED']
+            gold = player['GOLD']
             for item in player['INVENTORY']:
                 if item:
                     inv += str(item.lvl)
                     inv += '|'
                     inv += str(item.name)
                 inv += '@'
-
-    print(inv)
 
     final += "$!PARTICLES|"
 
@@ -133,7 +145,18 @@ while True:
             for particle in player['PARTICLES']:
                 x = int(particle.x)
                 y = int(particle.y)
-                Wrect = pygame.Rect((0, 0), (50, 15))
+                xW = 0
+                xH = 0
+                if particle.name == 'bow':
+                    xW = 50
+                    xH = 15
+                elif particle.name == 'snowball':
+                    xW = 15
+                    xH = 15
+                elif particle.name == 'dagger':
+                    xW = 120
+                    xH = 40
+                Wrect = pygame.Rect((0, 0), (xW, xH))
                 Wrect.center = (x, y)
                 if particle.range <= 0 and particle in player['PARTICLES']:
                     player['PARTICLES'].remove(particle)
@@ -146,29 +169,81 @@ while True:
                     final += '|'
                     final += str(particle.name)
                     final += '@'
+                for mobi in mobs:
+                    if mobi.isAlive:
+                        print(mobi.health)
+                        if mobi.health <= 0 and mobi.isAlive:
+                            player['GOLD'] += worth
+                            mobi.isAlive = False
+                        x = int(mobi.x)
+                        y = int(mobi.y)
+                        Prect = pygame.Rect((0, 0), (88, 120))
+                        Prect.center = (x, y)
+                        if Wrect.colliderect(Prect):
+                            multiplier = 0
+                            if player['INVENTORY'][player['PICKED']].name == 'bow' and not particle.Hit:
+                                particle.Hit = True
+                                multiplier = 6
+                                particle.range = 0
+                            elif player['INVENTORY'][player['PICKED']].name == 'snowball' and not particle.Hit:
+                                particle.Hit = True
+                                multiplier = 1
+                                particle.range = 0
+                            elif player['INVENTORY'][player['PICKED']].name == 'dagger' and not particle.Hit:
+                                particle.Hit = True
+                                multiplier = 10
+                            mobi.health -= (player['INVENTORY'][player['PICKED']].lvl * multiplier)
+
+                            if mobi.isMelley:
+                                worth = mobi.lvl * 300
+                            else:
+                                worth = mobi.lvl * 150
+
                 for player2 in players:
                     if player2 != player:
                         x = int(player2['X'])
                         y = int(player2['Y'])
                         Prect = pygame.Rect((0, 0), (66, 92))
                         Prect.center = (x, y)
-
                         if Wrect.colliderect(Prect):
                             multiplier = 0
-                            if player['INVENTORY'][player['PICKED']].name == 'bow':
+                            if player['INVENTORY'][player['PICKED']].name == 'bow' and not particle.Hit:
+                                particle.Hit = True
                                 multiplier = 6
-                            elif player['INVENTORY'][player['PICKED']].name == 'snowball':
-                                multiplier = 2
-                            player2['HEALTH'] -= player['INVENTORY'][player['PICKED']].lvl * multiplier
-                            player['PARTICLES'].remove(particle)
+                                particle.range = 0
+                            elif player['INVENTORY'][player['PICKED']].name == 'snowball' and not particle.Hit:
+                                particle.Hit = True
+                                multiplier = 1
+                            elif player['INVENTORY'][player['PICKED']].name == 'dagger' and not particle.Hit:
+                                particle.Hit = True
+                                multiplier = 10
+                            player2['HEALTH'] -= (player['INVENTORY'][player['PICKED']].lvl * multiplier)
+
     final += f'$!HEALTH|{h}'
     final += f'$!PICKED|{pick}'
     final += inv
+
+    final += f'$!MOBS|'
+    for mobi in mobs:
+        if mobi.isAlive:
+            mobiRect = pygame.Rect((0, 0), (88, 120))
+            mobiRect.center = (mobi.x, mobi.y)
+            if mobiRect.colliderect(rect):
+                final += str(mobi.x)
+                final += '|'
+                final += str(mobi.y)
+                final += '|'
+                final += str(mobi.isMelley)
+                final += '@'
+
+    final += f'$!GOLD|{gold}'
+    print(final)
     if players and ip == players[-1]['IP']:
         for player in players:
             if player['PARTICLES']:
                 for particle in player['PARTICLES']:
-                    particle.main()
+                    particle.main(player['X'], player['Y'])
+
     if not left_flag:
         UDPServerSocket.sendto(final.encode(), ip)
 UDPServerSocket.close()
