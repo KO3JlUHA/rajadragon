@@ -2,6 +2,12 @@ import math
 import pygame
 
 
+class Sizes:
+    ScreenH = 1080
+    ScreenW = 1920
+
+
+
 class CameraGroup(pygame.sprite.Group):
     def __init__(self):
         super().__init__()

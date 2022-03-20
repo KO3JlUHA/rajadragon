@@ -15,20 +15,19 @@ UDPServerSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 
 UDPServerSocket.bind((localIP, localPort))
-playes_speed = 6
+player_speed = 6
 players = []
-particles = []
+rect = pygame.Rect((0, 0), (pl.Sizes.ScreenW, pl.Sizes.ScreenH))
 while True:
     left_flag = False
     final = ''
-    rect = pygame.Rect((0, 0), (1920, 1080))
-    rect.center = (960, 520)
     bytesAddressPair = UDPServerSocket.recvfrom(bufferSize)
     msg = bytesAddressPair[0].decode()
     ip = bytesAddressPair[1]
     if msg == '!HI':  # "!HI"
         Data = {'IP': ip, 'X': 960, 'Y': 520, 'PARTICLES': [], 'HEALTH': 100, 'ATTACK-TIME': 0,
-                'INVENTORY': [wp.weapon(1, 'bow'), "", "", "", "", ""], 'PICKED': 0, 'GOLD': 0}
+                'INVENTORY': [wp.weapon(1, 'bow'), wp.weapon(2, 'bow'), wp.weapon(3, 'snowball'), wp.weapon(4, 'bow'),
+                              wp.weapon(5, 'bow'), wp.weapon(6, 'bow')], 'PICKED': 0, 'GOLD': 0}
         players.append(Data)
         final = '!LOC|960|520'
     elif msg == '!L':
@@ -39,14 +38,14 @@ while True:
     elif msg.startswith("!MOVE"):  # mag = "!MOVE.DIRECTIONX.DIRECTIONTY$!ATTACK.MOUSEX.MOUSEY"
         commands = msg.split('$')
         for command in commands:
-            _, xDir, yDir = command.split('.')
             for player in players:
                 if player['IP'] == ip:
-                    x = int(player['X'])
-                    y = int(player['Y'])
-                    xDir = int(xDir)
-                    yDir = int(yDir)
                     if command.startswith('!MOVE'):
+                        _, xDir, yDir = command.split('.')
+                        x = int(player['X'])
+                        y = int(player['Y'])
+                        xDir = int(xDir)
+                        yDir = int(yDir)
                         if xDir < 0:
                             xDir = -1
                         elif xDir > 0:
@@ -55,9 +54,8 @@ while True:
                             yDir = -1
                         elif yDir > 0:
                             yDir = 1
-                        x += playes_speed * xDir
-                        y += playes_speed * yDir
-                        rect = pygame.Rect((0, 0), (1920, 1080))
+                        x += player_speed * xDir
+                        y += player_speed * yDir
                         rect.center = (x, y)
                         player['X'] = x
                         player['Y'] = y
@@ -65,6 +63,11 @@ while True:
                         y = str(y)
                         final = '!LOC|' + x + '|' + y
                     elif command.startswith('!ATTACK') and player['INVENTORY'][player['PICKED']]:
+                        _, xDir, yDir = command.split('.')
+                        x = int(player['X'])
+                        y = int(player['Y'])
+                        xDir = int(xDir)
+                        yDir = int(yDir)
                         speed = 0
                         range = 0
                         cooldown = 0
@@ -88,11 +91,18 @@ while True:
                             player['PARTICLES'].append(
                                 pl.PlayerParticle(int(player['X']), int(player['Y']), xDir, yDir, range, speed, name))
                         # particles.append(pl.PlayerParticle(int(player['X']),int(player['Y']),xDir,yDir))
+                    elif command.startswith('!PICK'):
+                        index = command.split('.')[-1]
+                        index = int(index)
+                        if player['INVENTORY'][index]:
+                            player['PICKED'] = index
 
     else:
         break
     final += "$!OTHER_p|"
     h = 0
+    pick = 0
+    inv = "$!INV|"
     for player in players:
         if player['IP'] != ip:
             x = int(player['X'])
@@ -106,21 +116,43 @@ while True:
                 final += '@'
         else:
             h = player['HEALTH']
+            pick = player['PICKED']
+            for item in player['INVENTORY']:
+                if item:
+                    inv += str(item.lvl)
+                    inv += '|'
+                    inv += str(item.name)
+                inv += '@'
+
+    print(inv)
+
     final += "$!PARTICLES|"
 
     for player in players:
         if player['PARTICLES']:
             for particle in player['PARTICLES']:
+                x = int(particle.x)
+                y = int(particle.y)
+                Wrect = pygame.Rect((0, 0), (50, 15))
+                Wrect.center = (x, y)
+                if particle.range <= 0 and particle in player['PARTICLES']:
+                    player['PARTICLES'].remove(particle)
+                if Wrect.colliderect(rect):
+                    final += str(particle.x)
+                    final += '|'
+                    final += str(particle.y)
+                    final += '|'
+                    final += str(particle.angle)
+                    final += '|'
+                    final += str(particle.name)
+                    final += '@'
                 for player2 in players:
                     if player2 != player:
                         x = int(player2['X'])
                         y = int(player2['Y'])
                         Prect = pygame.Rect((0, 0), (66, 92))
                         Prect.center = (x, y)
-                        x = int(particle.x)
-                        y = int(particle.y)
-                        Wrect = pygame.Rect((0, 0), (50, 15))
-                        Wrect.center = (x, y)
+
                         if Wrect.colliderect(Prect):
                             multiplier = 0
                             if player['INVENTORY'][player['PICKED']].name == 'bow':
@@ -129,20 +161,14 @@ while True:
                                 multiplier = 2
                             player2['HEALTH'] -= player['INVENTORY'][player['PICKED']].lvl * multiplier
                             player['PARTICLES'].remove(particle)
-                if particle.range <= 0 and particle in player['PARTICLES']:
-                    player['PARTICLES'].remove(particle)
-                final += str(particle.x)
-                final += '|'
-                final += str(particle.y)
-                final += '|'
-                final += str(particle.angle)
-                final += '|'
-                final += str(particle.name)
-                final += '@'
-                particle.main()
-
     final += f'$!HEALTH|{h}'
-    print(final)
+    final += f'$!PICKED|{pick}'
+    final += inv
+    if players and ip == players[-1]['IP']:
+        for player in players:
+            if player['PARTICLES']:
+                for particle in player['PARTICLES']:
+                    particle.main()
     if not left_flag:
         UDPServerSocket.sendto(final.encode(), ip)
 UDPServerSocket.close()
