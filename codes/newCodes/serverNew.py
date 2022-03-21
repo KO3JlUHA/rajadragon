@@ -127,7 +127,7 @@ while True:
                         command = command[6:]
                         if len(Chatmsg) == 5:
                             Chatmsg = Chatmsg[1:]
-                        Chatmsg.append({'TEXT': command, 'TIME': time.time()})
+                        Chatmsg.append({'TEXT': command, 'TIME': time.time()-StartTime})
     else:
         break
     final += "$!OTHER_p|"
@@ -357,9 +357,9 @@ while True:
     if Chatmsg:
         final += '$!CHAT|'
         for msg in Chatmsg:
-            if msg['TIME'] + 10 <= time.time():
+            if msg['TIME'] + 10 <= time.time()-StartTime:
                 Chatmsg.remove(msg)
-            final += msg['TEXT'] + ' [' + calcTime(int(msg['TIME']-StartTime)) + ']'
+            final += msg['TEXT'] + ' [' + calcTime(int(msg['TIME'])) + ']'
             final += '@'
     if not left_flag:
         # print(final)

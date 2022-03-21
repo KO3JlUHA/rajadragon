@@ -227,7 +227,7 @@ while True:
         BlinkCounter += 1
         if BlinkCounter < 30:
             blink = '|'
-        elif BlinkCounter>=60:
+        elif BlinkCounter >= 60:
             BlinkCounter = 0
         smthg = fontlvl.render(msg[7:] + blink, True, (255, 255, 255))
         Screen.blit(smthg, (1, 150))
@@ -251,13 +251,13 @@ while True:
                     elif (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]):
                         if (pressed <= 'z' and pressed >= 'a'):
                             pressed = chr(event.key - 32)
-                            # todo add all the shift+ combos and caps
+                            # todo add all the shift+ combos
                         elif pressed == '0':
                             pressed = ')'
                         elif pressed == '1':
                             pressed = '!'
-                        elif pressed == '2':
-                            pressed = '@'
+                        elif pressed == '`':
+                            pressed = '~'
                         elif pressed == '3':
                             pressed = '#'
                         elif pressed == '4':
@@ -286,6 +286,13 @@ while True:
                             pressed = '<'
                         elif pressed == '.':
                             pressed = '>'
+                        elif pressed == '[':
+                            pressed = '{'
+                        elif pressed == ']':
+                            pressed = '}'
+                        elif pressed == '\\':
+                            pressed = '|'
+
                 except:
                     pass
                 if len(msg) <= 50:
