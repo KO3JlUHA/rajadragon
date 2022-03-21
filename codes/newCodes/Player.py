@@ -9,18 +9,23 @@ class Sizes:
 
 class mob:
     def __init__(self, x, y, lvl, isMelley):
+        self.lastAttack = 0
         self.x = x
         self.y = y
+        self.dir = 'r'
+        self.homeX = x
+        self.homeY = y
         self.lvl = lvl
         self.isMelley = isMelley
         self.isAlive = True
         self.DeathTime = 0
-        self.health = 100
+        self.health = 100 * lvl
+        self.deathTime = 0
         # ---------------------- ranged --------------------------------
-        # range = 500
+        # range = 600
         # speed = 5
-        # dmg = 4*lvl
-        # rect = pygame.Rect((x,y),(500,500))
+        # dmg = 10
+        # rect = pygame.Rect((x,y),(600,600))
         # rect.center = (x,y)
         # home_rect = pygame.Rect((x,y),(800,800))
         # home_recr.center = (x,y)

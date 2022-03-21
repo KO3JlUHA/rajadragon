@@ -9,11 +9,12 @@ imgSnowball = pygame.image.load('../../images/weapons/snowball.png')
 imgDragger = pygame.image.load('../../images/weapons/dagger.png')
 iconBow = pygame.image.load('../../images/icons/icon-bow.png')
 iconCumball = pygame.image.load('../../images/icons/icon-cumball.png')
+imgSpear = pygame.image.load('../../images/weapons/spear.png')
 iconDagger = pygame.transform.scale(imgDragger, (70, 70))
 imgDragger = pygame.transform.scale(imgDragger, (120, 40))
 
 MobRange = pygame.image.load('../../images/basics/mob.png')
-# MobMeele = pygame.image.load('../../images/basics/mob.png')
+MobMeele = pygame.transform.scale(pygame.image.load('../../images/basics/zombie.png'), (88, 120))
 mobRect = MobRange.get_rect()
 
 coinA = pygame.image.load('../../images/coins/silver.png')
@@ -42,12 +43,18 @@ def drawgold(gold):
         gold /= 10
         toadd = 'K'
     toShow = font.render(str(gold) + toadd, True, (255, 215, 0))
-    Screen.blit(toShow, (140, 990))
+    Screen.blit(toShow, (140, Basics.Sizes.ScreenH - 90))
 
 
-def drawMob(x, y, isMelee):
+def drawMob(x, y, isMelee, dir):
     mobRect.center = (x, y)
-    Screen.blit(MobRange, mobRect)
+    if not isMelee:
+        Screen.blit(MobRange, mobRect)
+    else:
+        if dir == 'r':
+            Screen.blit(pygame.transform.flip(MobMeele, True, False), mobRect)
+        else:
+            Screen.blit(MobMeele, mobRect)
 
 
 class others:
@@ -90,18 +97,15 @@ player = Basics.Player((640, 320), CameraGroup)
 picked = 0
 inventory = ['', '', '', '', '', 'FUCK']
 
-ms = pygame.transform.scale(pygame.image.load('../../images/basics/mouse.png'),(23,36))
+ms = pygame.transform.scale(pygame.image.load('../../images/basics/mouse.png'), (23, 36))
 mouseRect = ms.get_rect()
 while True:
     gold = 0
     Screen.fill('#71ddee')
     CameraGroup.update()
     CameraGroup.CustomDraw(player)
-    #-------------------------------------------------------------
+    # -------------------------------------------------------------
     pygame.mouse.set_visible(False)
-
-
-
 
     othersList = []
     reciven = UDPClientSocket.recvfrom(bufferSize)[0].decode()
@@ -124,14 +128,14 @@ while True:
             command = command[6:]
             for mob in command.split('@'):
                 if mob:
-                    x, y, isMeeley = mob.split('|')
+                    x, y, isMeeley, dir = mob.split('|')
                     x = int(x) - CameraGroup.offset.x
                     y = int(y) - CameraGroup.offset.y
                     if isMeeley == 'True':
                         isMeeley = True
                     else:
                         isMeeley = False
-                    drawMob(x, y, isMeeley)
+                    drawMob(x, y, isMeeley, dir)
         elif command.startswith('!PARTICLES'):
             command = command[11:]
             if command:
@@ -169,15 +173,35 @@ while True:
                 inventory[itemI] = item
                 itemI += 1
         elif command.startswith('!GOLD'):
-            gold = int(command.split('|')[-1])
-    drawgold(gold)
+            gold = int(command.split('|')[1])
+        elif command.startswith('!SPEARS'):
+            command = command[8:]
+            for particle in command.split('@'):
+                if particle:
+                    X, Y, ANGLE, name = particle.split('|')
+                    X = int(X)
+                    Y = int(Y)
+                    ANGLE = float(ANGLE)
+                    ANGLE *= -180 / math.pi
+                    img = ''
+                    if name == 'bow':
+                        img = imgArrow
+                    elif name == 'snowball':
+                        img = imgSnowball
+                    elif name == 'dagger':
+                        img = imgDragger
+                    elif name == 'spear':
+                        img = imgSpear
+                    img = pygame.transform.rotate(img, ANGLE)
+                    rectTmp = img.get_rect()
+                    rectTmp.center = (X - CameraGroup.offset.x, Y - CameraGroup.offset.y)
+                    Screen.blit(img, rectTmp)
     # pygame.draw.rect(Screen, (255, 0, 0), player.rect, 4)
 
-
     mouseX, mouseY = pygame.mouse.get_pos()
-    mouseRect.topleft=(mouseX,mouseY)
-    Screen.blit(ms,mouseRect)
-
+    mouseRect.topleft = (mouseX, mouseY)
+    Screen.blit(ms, mouseRect)
+    drawgold(gold)
     mouseXmap = int(mouseX + CameraGroup.offset.x)
     mouseYmap = int(mouseY + CameraGroup.offset.y)
     dirX, dirY = player.move()

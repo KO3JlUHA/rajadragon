@@ -1,3 +1,4 @@
+import random
 import socket
 import time
 import weapons as wp
@@ -10,7 +11,7 @@ bufferSize = 1024
 mobs = []
 mob = pl.mob(200, 200, 2, False)
 mobs.append(mob)
-mob = pl.mob(100, 100, 5, False)
+mob = pl.mob(100, 100, 5, True)
 mobs.append(mob)
 
 # Create a datagram socket
@@ -22,9 +23,10 @@ worth = 0
 UDPServerSocket.bind((localIP, localPort))
 player_speed = 6
 players = []
+spears = []
+
 rect = pygame.Rect((0, 0), (pl.Sizes.ScreenW, pl.Sizes.ScreenH))
 while True:
-    print(len(players))
     left_flag = False
     final = ''
     bytesAddressPair = UDPServerSocket.recvfrom(bufferSize)
@@ -110,13 +112,10 @@ while True:
                         index = int(index)
                         if player['INVENTORY'][index]:
                             player['PICKED'] = index
-
     else:
         break
     final += "$!OTHER_p|"
-    h = 0
-    pick = 0
-    gold = 0
+    playerThis = ''
     inv = "$!INV|"
     for player in players:
         if player['IP'] != ip:
@@ -130,9 +129,7 @@ while True:
                 final += str(y)
                 final += '@'
         else:
-            h = player['HEALTH']
-            pick = player['PICKED']
-            gold = player['GOLD']
+            playerThis = player
             for item in player['INVENTORY']:
                 if item:
                     inv += str(item.lvl)
@@ -173,7 +170,8 @@ while True:
                     final += '@'
                 for mobi in mobs:
                     if mobi.isAlive:
-                        if mobi.health <= 0 and mobi.isAlive:
+                        if mobi.health <= 0:
+                            mobi.deathtime = time.time()
                             player['GOLD'] += worth
                             mobi.isAlive = False
                         x = int(mobi.x)
@@ -220,13 +218,70 @@ while True:
                                 multiplier = 10
                             player2['HEALTH'] -= (player['INVENTORY'][player['PICKED']].lvl * multiplier)
 
-    final += f'$!HEALTH|{h}'
-    final += f'$!PICKED|{pick}'
+    if playerThis:
+        final += f'$!PICKED|{playerThis["PICKED"]}'
     final += inv
 
     final += f'$!MOBS|'
     for mobi in mobs:
+        if not mobi.isAlive and mobi.deathtime + 7 < time.time():
+            mobi.x = mobi.homeX
+            mobi.y = mobi.homeY
+            mobi.health = 100 * mobi.lvl
+            mobi.isAlive = True
         if mobi.isAlive:
+            trig = 0
+            if mobi.isMelley:
+                trig = 1200
+            else:
+                trig = 600
+            PlayerRect = pygame.Rect((0, 0), (66, 92))
+            PlayerRect.center = rect.center
+
+            TrigRect = pygame.Rect((0, 0), (trig, trig))
+            TrigRect.center = (mobi.x, mobi.y)
+            speed = 5
+            if mobi.isMelley:
+                speed = 10
+            if TrigRect.colliderect(PlayerRect):
+                Px, Py = rect.center
+                if mobi.lastAttack + 2 < time.time():
+                    mobi.lastAttack = time.time()
+                    if not mobi.isMelley:
+                        spears.append(pl.PlayerParticle(mobi.x, mobi.y, Px, Py, 500, 10, 'spear'))  # spear later
+                    else:
+                        mobiRect = pygame.Rect((0, 0), (88, 120))
+                        mobiRect.center = (mobi.x, mobi.y)
+                        if PlayerRect.colliderect(mobiRect):
+                            playerThis['HEALTH'] -= 10
+                x = random.randint(0, 1)
+                if (x == 0):
+                    if (mobi.x > Px):
+                        mobi.x -= speed
+                        mobi.dir = 'l'
+                    else:
+                        mobi.x += speed
+                        mobi.dir = 'r'
+                else:
+                    if (mobi.y > Py):
+                        mobi.y -= speed
+                    else:
+                        mobi.y += speed
+            else:
+                x = random.randint(0, 1)
+                if x == 0:
+                    if mobi.x > mobi.homeX:
+                        mobi.x -= speed
+                        mobi.dir = 'l'
+                    elif mobi.x < mobi.homeX:
+                        mobi.x += speed
+                        mobi.dir = 'r'
+                else:
+                    if mobi.y > mobi.homeY:
+                        mobi.y -= speed
+                    elif mobi.y < mobi.homeY:
+                        mobi.y += speed
+
             mobiRect = pygame.Rect((0, 0), (88, 120))
             mobiRect.center = (mobi.x, mobi.y)
             if mobiRect.colliderect(rect):
@@ -235,15 +290,54 @@ while True:
                 final += str(mobi.y)
                 final += '|'
                 final += str(mobi.isMelley)
+                final += '|'
+                final += str(mobi.dir)
                 final += '@'
 
-    final += f'$!GOLD|{gold}'
+    if playerThis:
+        final += f'$!GOLD|{playerThis["GOLD"]}'
+    final += '$!SPEARS|'
+
+    if playerThis:
+        for particle in spears:
+            Wrect = pygame.Rect((0, 0), (50, 15))
+            Wrect.center = (particle.x, particle.y)
+            if Wrect.colliderect(rect):
+                final += str(particle.x)
+                final += '|'
+                final += str(particle.y)
+                final += '|'
+                final += str(particle.angle)
+                final += '|'
+                final += str(particle.name)
+                final += '@'
+                PlayerRect = pygame.Rect((0, 0), (66, 92))
+                PlayerRect.center = rect.center
+                if PlayerRect.colliderect(Wrect) and not particle.Hit:
+                    particle.Hit = True
+                    playerThis['HEALTH'] -= 10
+                    particle.range = 0
+
+    if playerThis:
+        final += f'$!HEALTH|{playerThis["HEALTH"]}'
+
+    if not playerThis:
+        spears = []
+        for mobi in mobs:
+            mobi.x = mobi.homeX
+            mobi.y = mobi.homeY
     if players and ip == players[-1]['IP']:
+        for spear in spears:
+            if spear.range == 0:
+                spears.remove(spear)
+            spear.main(0, 0)
+
         for player in players:
             if player['PARTICLES']:
                 for particle in player['PARTICLES']:
                     particle.main(player['X'], player['Y'])
 
     if not left_flag:
+        # print(final)
         UDPServerSocket.sendto(final.encode(), ip)
 UDPServerSocket.close()
