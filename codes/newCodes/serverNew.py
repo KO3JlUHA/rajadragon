@@ -5,6 +5,17 @@ import weapons as wp
 import pygame
 import Player as pl
 
+
+def calcTime(time):
+    days = int(time / 86400)
+    time %= 86400
+    hours = int(time / 3600)
+    time %= 3600
+    minutes = int(time / 60)
+    time %= 60
+    return f'{days}:{hours}:{minutes}:{time}'
+
+StartTime = time.time()
 localIP = "0.0.0.0"
 localPort = 20003
 bufferSize = 1024
@@ -114,9 +125,9 @@ while True:
                             player['PICKED'] = index
                     elif command.startswith('!CHAT'):
                         command = command[6:]
-                        if len(Chatmsg)==5:
-                            Chatmsg=Chatmsg[1:]
-                        Chatmsg.append({'TEXT':command,'TIME': time.time()})
+                        if len(Chatmsg) == 5:
+                            Chatmsg = Chatmsg[1:]
+                        Chatmsg.append({'TEXT': command, 'TIME': time.time()})
     else:
         break
     final += "$!OTHER_p|"
@@ -336,22 +347,20 @@ while True:
         for spear in spears:
             if spear.range == 0:
                 spears.remove(spear)
-            spear.main(0, 0)#
+            spear.main(0, 0)  #
 
         for player in players:
             if player['PARTICLES']:
                 for particle in player['PARTICLES']:
                     particle.main(player['X'], player['Y'])
 
-
-
     if Chatmsg:
-        final+='$!CHAT|'
+        final += '$!CHAT|'
         for msg in Chatmsg:
-            if msg['TIME']+10<=time.time():
+            if msg['TIME'] + 10 <= time.time():
                 Chatmsg.remove(msg)
-            final+=msg['TEXT']
-            final+='@'
+            final += msg['TEXT'] + ' [' + calcTime(int(msg['TIME']-StartTime)) + ']'
+            final += '@'
     if not left_flag:
         # print(final)
         UDPServerSocket.sendto(final.encode(), ip)
