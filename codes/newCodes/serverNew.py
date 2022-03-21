@@ -15,6 +15,7 @@ def calcTime(time):
     time %= 60
     return f'{days}:{hours}:{minutes}:{time}'
 
+
 StartTime = time.time()
 localIP = "0.0.0.0"
 localPort = 20003
@@ -127,7 +128,7 @@ while True:
                         command = command[6:]
                         if len(Chatmsg) == 5:
                             Chatmsg = Chatmsg[1:]
-                        Chatmsg.append({'TEXT': command, 'TIME': time.time()-StartTime})
+                        Chatmsg.append({'TEXT': command, 'TIME': time.time() - StartTime})
     else:
         break
     final += "$!OTHER_p|"
@@ -252,39 +253,44 @@ while True:
                 trig = 1200
             else:
                 trig = 600
-            PlayerRect = pygame.Rect((0, 0), (66, 92))
-            PlayerRect.center = rect.center
-
             TrigRect = pygame.Rect((0, 0), (trig, trig))
             TrigRect.center = (mobi.x, mobi.y)
             speed = 5
             if mobi.isMelley:
                 speed = 10
-            if TrigRect.colliderect(PlayerRect):
-                Px, Py = rect.center
-                if mobi.lastAttack + 2 < time.time():
-                    mobi.lastAttack = time.time()
-                    if not mobi.isMelley:
-                        spears.append(pl.PlayerParticle(mobi.x, mobi.y, Px, Py, 500, 10, 'spear'))  # spear later
+
+            flag_move = False
+            for player in players:
+                PlayerRect = pygame.Rect((0, 0), (66, 92))
+                PlayerRect.center = (player['X'], player['Y'])
+                if TrigRect.colliderect(PlayerRect):
+                    Px, Py = PlayerRect.center
+                    if mobi.lastAttack + 2 < time.time():
+                        mobi.lastAttack = time.time()
+                        if not mobi.isMelley:
+                            spears.append(pl.PlayerParticle(mobi.x, mobi.y, Px, Py, 500, 10, 'spear'))  # spear later
+                        else:
+                            mobiRect = pygame.Rect((0, 0), (88, 120))
+                            mobiRect.center = (mobi.x, mobi.y)
+                            if PlayerRect.colliderect(mobiRect):
+                                playerThis['HEALTH'] -= 10
+                    x = random.randint(0, 1)
+                    if (x == 0):
+                        if (mobi.x > Px):
+                            mobi.x -= speed
+                            mobi.dir = 'l'
+                        else:
+                            mobi.x += speed
+                            mobi.dir = 'r'
                     else:
-                        mobiRect = pygame.Rect((0, 0), (88, 120))
-                        mobiRect.center = (mobi.x, mobi.y)
-                        if PlayerRect.colliderect(mobiRect):
-                            playerThis['HEALTH'] -= 10
-                x = random.randint(0, 1)
-                if (x == 0):
-                    if (mobi.x > Px):
-                        mobi.x -= speed
-                        mobi.dir = 'l'
-                    else:
-                        mobi.x += speed
-                        mobi.dir = 'r'
-                else:
-                    if (mobi.y > Py):
-                        mobi.y -= speed
-                    else:
-                        mobi.y += speed
-            else:
+                        if (mobi.y > Py):
+                            mobi.y -= speed
+                        else:
+                            mobi.y += speed
+
+                    flag_move = True
+                    break
+            if not flag_move:
                 x = random.randint(0, 1)
                 if x == 0:
                     if mobi.x > mobi.homeX:
@@ -357,9 +363,10 @@ while True:
     if Chatmsg:
         final += '$!CHAT|'
         for msg in Chatmsg:
-            if msg['TIME'] + 10 <= time.time()-StartTime:
+            if msg['TIME'] + 10 <= time.time() - StartTime:
                 Chatmsg.remove(msg)
             final += msg['TEXT'] + ' [' + calcTime(int(msg['TIME'])) + ']'
+            # later to be final +=playerThis['NAME']+": "+ msg['TEXT'] + ' [' + calcTime(int(msg['TIME'])) + ']'
             final += '@'
     if not left_flag:
         # print(final)
