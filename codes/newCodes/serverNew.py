@@ -24,9 +24,11 @@ player_speed = 6
 players = []
 rect = pygame.Rect((0, 0), (pl.Sizes.ScreenW, pl.Sizes.ScreenH))
 while True:
+    print(len(players))
     left_flag = False
     final = ''
     bytesAddressPair = UDPServerSocket.recvfrom(bufferSize)
+
     msg = bytesAddressPair[0].decode()
     ip = bytesAddressPair[1]
     if msg == '!HI':  # "!HI"
@@ -171,7 +173,6 @@ while True:
                     final += '@'
                 for mobi in mobs:
                     if mobi.isAlive:
-                        print(mobi.health)
                         if mobi.health <= 0 and mobi.isAlive:
                             player['GOLD'] += worth
                             mobi.isAlive = False
@@ -237,7 +238,6 @@ while True:
                 final += '@'
 
     final += f'$!GOLD|{gold}'
-    print(final)
     if players and ip == players[-1]['IP']:
         for player in players:
             if player['PARTICLES']:

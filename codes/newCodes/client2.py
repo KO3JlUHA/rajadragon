@@ -89,11 +89,20 @@ CameraGroup = Basics.CameraGroup()
 player = Basics.Player((640, 320), CameraGroup)
 picked = 0
 inventory = ['', '', '', '', '', 'FUCK']
+
+ms = pygame.transform.scale(pygame.image.load('../../images/basics/mouse.png'),(23,36))
+mouseRect = ms.get_rect()
 while True:
     gold = 0
     Screen.fill('#71ddee')
     CameraGroup.update()
     CameraGroup.CustomDraw(player)
+    #-------------------------------------------------------------
+    pygame.mouse.set_visible(False)
+
+
+
+
     othersList = []
     reciven = UDPClientSocket.recvfrom(bufferSize)[0].decode()
     for command in reciven.split('$'):
@@ -163,7 +172,12 @@ while True:
             gold = int(command.split('|')[-1])
     drawgold(gold)
     # pygame.draw.rect(Screen, (255, 0, 0), player.rect, 4)
+
+
     mouseX, mouseY = pygame.mouse.get_pos()
+    mouseRect.topleft=(mouseX,mouseY)
+    Screen.blit(ms,mouseRect)
+
     mouseXmap = int(mouseX + CameraGroup.offset.x)
     mouseYmap = int(mouseY + CameraGroup.offset.y)
     dirX, dirY = player.move()
