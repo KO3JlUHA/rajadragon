@@ -24,11 +24,12 @@ UDPServerSocket.bind((localIP, localPort))
 player_speed = 6
 players = []
 spears = []
-
+Chatmsg = []
 rect = pygame.Rect((0, 0), (pl.Sizes.ScreenW, pl.Sizes.ScreenH))
 while True:
     left_flag = False
     final = ''
+
     bytesAddressPair = UDPServerSocket.recvfrom(bufferSize)
 
     msg = bytesAddressPair[0].decode()
@@ -112,6 +113,11 @@ while True:
                         index = int(index)
                         if player['INVENTORY'][index]:
                             player['PICKED'] = index
+                    elif command.startswith('!CHAT'):
+                        command = command[6:]
+                        if len(Chatmsg)==5:
+                            Chatmsg=Chatmsg[1:]
+                        Chatmsg.append({'TEXT':command,'TIME': time.time()})
     else:
         break
     final += "$!OTHER_p|"
@@ -223,6 +229,7 @@ while True:
     final += inv
 
     final += f'$!MOBS|'
+
     for mobi in mobs:
         if not mobi.isAlive and mobi.deathtime + 7 < time.time():
             mobi.x = mobi.homeX
@@ -337,6 +344,15 @@ while True:
                 for particle in player['PARTICLES']:
                     particle.main(player['X'], player['Y'])
 
+
+
+    if Chatmsg:
+        final+='$!CHAT|'
+        for msg in Chatmsg:
+            if msg['TIME']+10<=time.time():
+                Chatmsg.remove(msg)
+            final+=msg['TEXT']
+            final+='@'
     if not left_flag:
         # print(final)
         UDPServerSocket.sendto(final.encode(), ip)

@@ -10,8 +10,8 @@ imgDragger = pygame.image.load('../../images/weapons/dagger.png')
 iconBow = pygame.image.load('../../images/icons/icon-bow.png')
 iconCumball = pygame.image.load('../../images/icons/icon-cumball.png')
 imgSpear = pygame.image.load('../../images/weapons/spear.png')
-iconDagger = pygame.transform.scale(imgDragger, (70, 70))
-imgDragger = pygame.transform.scale(imgDragger, (120, 40))
+iconDagger = pygame.transform.scale(pygame.image.load('../../images/icons/icon-dagger.png'), (70, 70))
+imgDragger = pygame.transform.scale(imgDragger, (125, 40))
 
 MobRange = pygame.image.load('../../images/basics/mob.png')
 MobMeele = pygame.transform.scale(pygame.image.load('../../images/basics/zombie.png'), (88, 120))
@@ -96,6 +96,10 @@ CameraGroup = Basics.CameraGroup()
 player = Basics.Player((640, 320), CameraGroup)
 picked = 0
 inventory = ['', '', '', '', '', 'FUCK']
+
+inChat = False
+ChatMsg = ''
+msg = '$!CHAT|'
 
 ms = pygame.transform.scale(pygame.image.load('../../images/basics/mouse.png'), (23, 36))
 mouseRect = ms.get_rect()
@@ -196,6 +200,13 @@ while True:
                     rectTmp = img.get_rect()
                     rectTmp.center = (X - CameraGroup.offset.x, Y - CameraGroup.offset.y)
                     Screen.blit(img, rectTmp)
+        elif command.startswith('!CHAT'):
+            command = command[6:]
+            heightTxt = 1
+            for txt in command.split('@'):
+                if txt:
+                    Screen.blit(fontlvl.render(txt,True,(255,255,255)),(1,heightTxt))
+                    heightTxt+=30
     # pygame.draw.rect(Screen, (255, 0, 0), player.rect, 4)
 
     mouseX, mouseY = pygame.mouse.get_pos()
@@ -204,17 +215,86 @@ while True:
     drawgold(gold)
     mouseXmap = int(mouseX + CameraGroup.offset.x)
     mouseYmap = int(mouseY + CameraGroup.offset.y)
-    dirX, dirY = player.move()
+    dirX = 0
+    dirY = 0
+    if not inChat:
+        dirX, dirY = player.move()
     tosend = '!MOVE.' + str(dirX) + '.' + str(dirY)
+
+    if inChat:
+        smthg = fontlvl.render(msg[7:] + '|', True, (255, 255, 255))
+        Screen.blit(smthg, (1, 150))
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             UDPClientSocket.sendto('!L'.encode(), serverAddressPort)
             pygame.quit()
             sys.exit()
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+
+        if not inChat and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             tosend += f'$!ATTACK.{mouseXmap}.{mouseYmap}'
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_1:
+            if inChat:
+                pressed = ''
+                try:
+                    pressed = chr(event.key)
+                    keys = pygame.key.get_pressed()
+                    if (keys[pygame.K_BACKSPACE] and len(msg) > 7):
+                        msg = msg[:-1]
+                    elif (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]):
+                        if (pressed <= 'z' and pressed >= 'a'):
+                            pressed = chr(event.key - 32)
+                        elif pressed == '0':
+                            pressed = ')'
+                        elif pressed == '1':
+                            pressed = '!'
+                        elif pressed == '2':
+                            pressed = '@'
+                        elif pressed == '3':
+                            pressed = '#'
+                        elif pressed == '4':
+                            pressed = '$'
+                        elif pressed == '5':
+                            pressed = '%'
+                        elif pressed == '6':
+                            pressed = '^'
+                        elif pressed == '7':
+                            pressed = '&'
+                        elif pressed == '8':
+                            pressed = '*'
+                        elif pressed == '9':
+                            pressed = '('
+                        elif pressed == '-':
+                            pressed = '_'
+                        elif pressed == '=':
+                            pressed = '+'
+                        elif pressed == ';':
+                            pressed = ':'
+                        elif pressed == "'":
+                            pressed = '"'
+                        elif pressed == "/":
+                            pressed = "?"
+                        elif pressed == ',':
+                            pressed = '<'
+                        elif pressed == '.':
+                            pressed = '>'
+                except:
+                    pass
+                if len(msg) <= 50:
+                    if pressed >= ' ' and pressed <= '~':
+                        msg += str(pressed)
+
+            if event.key == pygame.K_RETURN or inChat:
+                if event.key == pygame.K_RETURN:
+                    inChat = not inChat
+                if not inChat:
+                    ChatMsg = msg
+                    msg = '$!CHAT|'
+
+                    # ChatMsg = msg
+
+
+            elif event.key == pygame.K_1:
                 tosend += '$!PICK.0'
             elif event.key == pygame.K_2:
                 tosend += '$!PICK.1'
@@ -226,6 +306,10 @@ while True:
                 tosend += '$!PICK.4'
             elif event.key == pygame.K_6:
                 tosend += '$!PICK.5'
+
+    if ChatMsg!='$!CHAT|':
+        tosend += ChatMsg
+        ChatMsg = ''
     UDPClientSocket.sendto(tosend.encode(), serverAddressPort)
 
     rectt = pygame.Rect((1000, 900), (90, 90))
