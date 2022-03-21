@@ -8,7 +8,7 @@ class Sizes:
 
 
 class mob:
-    def __init__(self, x, y, lvl, isMelley):
+    def __init__(self, x, y, lvl, isMelley):#
         self.lastAttack = 0
         self.x = x
         self.y = y

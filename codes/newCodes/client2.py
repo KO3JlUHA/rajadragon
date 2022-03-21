@@ -305,7 +305,7 @@ while True:
             elif event.key == pygame.K_5:
                 tosend += '$!PICK.4'
             elif event.key == pygame.K_6:
-                tosend += '$!PICK.5'
+                tosend += '$!PICK.5'#
 
     if ChatMsg!='$!CHAT|':
         tosend += ChatMsg

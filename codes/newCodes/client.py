@@ -326,7 +326,7 @@ while True:
             if name == 'snowball':
                 icon = iconCumball
             elif name == 'dagger':
-                icon = iconDagger
+                icon = iconDagger#
             Screen.blit(icon, rectt)
             # toShow = fontlvl.render(str(weapons_list[5 - i].lvl), True, (0, 0, 100))
             Screen.blit(toShow, rectt)

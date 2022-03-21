@@ -337,7 +337,7 @@ while True:
         for spear in spears:
             if spear.range == 0:
                 spears.remove(spear)
-            spear.main(0, 0)
+            spear.main(0, 0)#
 
         for player in players:
             if player['PARTICLES']:
