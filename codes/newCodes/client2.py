@@ -23,6 +23,8 @@ coinA = pygame.transform.scale(coinA, (70, 70))
 coinD = pygame.transform.scale(coinD, (70, 70))
 coinS = pygame.image.load('../../images/coins/gold.png')
 coinS = pygame.transform.scale(coinS, (70, 70))
+Chat_Box = pygame.image.load('../../images/basics/chatBox.png')
+Chat_Box = pygame.transform.scale(Chat_Box, (600, 30))
 
 
 def drawgold(gold):
@@ -212,7 +214,6 @@ while True:
 
     mouseX, mouseY = pygame.mouse.get_pos()
     mouseRect.topleft = (mouseX, mouseY)
-    Screen.blit(ms, mouseRect)
     drawgold(gold)
     mouseXmap = int(mouseX + CameraGroup.offset.x)
     mouseYmap = int(mouseY + CameraGroup.offset.y)
@@ -223,6 +224,7 @@ while True:
     tosend = '!MOVE.' + str(dirX) + '.' + str(dirY)
 
     if inChat:
+        Screen.blit(Chat_Box, (1, 146))
         blink = ''
         BlinkCounter += 1
         if BlinkCounter < 30:
@@ -230,7 +232,7 @@ while True:
         elif BlinkCounter >= 60:
             BlinkCounter = 0
         smthg = fontlvl.render(msg[7:] + blink, True, (255, 255, 255))
-        Screen.blit(smthg, (1, 150))
+        Screen.blit(smthg, (3, 150))
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
@@ -251,7 +253,6 @@ while True:
                     elif (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]):
                         if (pressed <= 'z' and pressed >= 'a'):
                             pressed = chr(event.key - 32)
-                            # todo add all the shift+ combos
                         elif pressed == '0':
                             pressed = ')'
                         elif pressed == '1':
@@ -351,5 +352,9 @@ while True:
     for i in range(picked + 1):
         rectt.right += 80
     pygame.draw.rect(Screen, (255, 255, 255), rectt, 10)
+    Screen.blit(ms, mouseRect)
+
+
+
     pygame.display.update()
     Clock.tick(60)
