@@ -18,7 +18,6 @@ mobs.append(mob)
 UDPServerSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 # Bind to address and ip
-
 worth = 0
 UDPServerSocket.bind((localIP, localPort))
 player_speed = 6

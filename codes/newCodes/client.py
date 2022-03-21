@@ -99,6 +99,7 @@ inventory = ['', '', '', '', '', 'FUCK']
 
 inChat = False
 ChatMsg = ''
+BlinkCounter = 0
 msg = '$!CHAT|'
 
 ms = pygame.transform.scale(pygame.image.load('../../images/basics/mouse.png'), (23, 36))
@@ -205,8 +206,8 @@ while True:
             heightTxt = 1
             for txt in command.split('@'):
                 if txt:
-                    Screen.blit(fontlvl.render(txt,True,(255,255,255)),(1,heightTxt))
-                    heightTxt+=30
+                    Screen.blit(fontlvl.render(txt, True, (255, 255, 255)), (1, heightTxt))
+                    heightTxt += 30
     # pygame.draw.rect(Screen, (255, 0, 0), player.rect, 4)
 
     mouseX, mouseY = pygame.mouse.get_pos()
@@ -222,7 +223,13 @@ while True:
     tosend = '!MOVE.' + str(dirX) + '.' + str(dirY)
 
     if inChat:
-        smthg = fontlvl.render(msg[7:] + '|', True, (255, 255, 255))
+        blink = ''
+        BlinkCounter += 1
+        if BlinkCounter < 30:
+            blink = '|'
+        elif BlinkCounter>=60:
+            BlinkCounter = 0
+        smthg = fontlvl.render(msg[7:] + blink, True, (255, 255, 255))
         Screen.blit(smthg, (1, 150))
 
     for event in pygame.event.get():
@@ -244,6 +251,7 @@ while True:
                     elif (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]):
                         if (pressed <= 'z' and pressed >= 'a'):
                             pressed = chr(event.key - 32)
+                            # todo add all the shift+ combos and caps
                         elif pressed == '0':
                             pressed = ')'
                         elif pressed == '1':
@@ -307,7 +315,7 @@ while True:
             elif event.key == pygame.K_6:
                 tosend += '$!PICK.5'
 
-    if ChatMsg!='$!CHAT|':
+    if ChatMsg != '$!CHAT|':
         tosend += ChatMsg
         ChatMsg = ''
     UDPClientSocket.sendto(tosend.encode(), serverAddressPort)
@@ -326,7 +334,7 @@ while True:
             if name == 'snowball':
                 icon = iconCumball
             elif name == 'dagger':
-                icon = iconDagger#
+                icon = iconDagger  #
             Screen.blit(icon, rectt)
             # toShow = fontlvl.render(str(weapons_list[5 - i].lvl), True, (0, 0, 100))
             Screen.blit(toShow, rectt)
