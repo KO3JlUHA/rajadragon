@@ -46,10 +46,12 @@ while True:
     msg = bytesAddressPair[0].decode()
     ip = bytesAddressPair[1]
     if msg == '!HI':  # "!HI"
+
         Data = {'IP': ip, 'X': 960, 'Y': 520, 'PARTICLES': [], 'HEALTH': 100, 'ATTACK-TIME': 0,
                 'INVENTORY': [wp.weapon(1, 'bow'), wp.weapon(2, 'bow'), wp.weapon(3, 'snowball'),
                               wp.weapon(400, 'dagger'),
-                              wp.weapon(5, 'bow'), wp.weapon(6, 'bow')], 'PICKED': 0, 'GOLD': 0}
+                              wp.weapon(5, 'bow'), wp.weapon(6, 'bow')], 'PICKED': 0, 'GOLD': 0,
+                'LASTTIME': time.time()}
         players.append(Data)
         final = '!LOC|960|520'
     elif msg == '!L':
@@ -58,12 +60,15 @@ while True:
             if player['IP'] == ip:
                 players.remove(player)
     elif msg.startswith("!MOVE"):  # mag = "!MOVE.DIRECTIONX.DIRECTIONTY$!ATTACK.MOUSEX.MOUSEY"
+        print(msg)
         if msg.__contains__('$!CHAT'):
             chatPacket = msg[msg.index('$!CHAT'):]
+            msg = msg[:msg.index('$!CHAT')]
         commands = msg.split('$')
         for command in commands:
             for player in players:
                 if player['IP'] == ip:
+                    player['LASTTIME'] = time.time()
                     if command.startswith('!MOVE'):
                         _, xDir, yDir = command.split('.')
                         x = int(player['X'])
@@ -132,17 +137,17 @@ while True:
 
     if chatPacket:
         print(chatPacket)
-        chatPacket= chatPacket[7:]
+        chatPacket = chatPacket[7:]
         if len(Chatmsg) == 5:
             Chatmsg = Chatmsg[1:]
         Chatmsg.append({'TEXT': chatPacket, 'TIME': time.time() - StartTime})
-
-
 
     final += "$!OTHER_p|"
     playerThis = ''
     inv = "$!INV|"
     for player in players:
+        if player['LASTTIME'] + 2 < time.time():
+            players.remove(player)
         if player['IP'] != ip:
             x = int(player['X'])
             y = int(player['Y'])
@@ -283,15 +288,15 @@ while True:
                             if PlayerRect.colliderect(mobiRect):
                                 playerThis['HEALTH'] -= 10
                     x = random.randint(0, 1)
-                    if (x == 0):
-                        if (mobi.x > Px):
+                    if x == 0:
+                        if mobi.x > Px:
                             mobi.x -= speed
                             mobi.dir = 'l'
                         else:
                             mobi.x += speed
                             mobi.dir = 'r'
                     else:
-                        if (mobi.y > Py):
+                        if mobi.y > Py:
                             mobi.y -= speed
                         else:
                             mobi.y += speed
@@ -374,11 +379,10 @@ while True:
             if msg['TIME'] + 10 <= time.time() - StartTime:
                 Chatmsg.remove(msg)
             mmssgg = msg['TEXT'] + ' [' + calcTime(int(msg['TIME'])) + ']'
-            #mmssgg = msg['NAME']+': ' +msg['TEXT'] + ' [' + calcTime(int(msg['TIME'])) + ']'
-            final += str(len(mmssgg))+'@'+mmssgg
-
+            # mmssgg = msg['NAME']+': ' +msg['TEXT'] + ' [' + calcTime(int(msg['TIME'])) + ']'
+            final += str(len(mmssgg)) + '@' + mmssgg
 
     if not left_flag:
-        # print(final)
+        print(final)
         UDPServerSocket.sendto(final.encode(), ip)
 UDPServerSocket.close()
