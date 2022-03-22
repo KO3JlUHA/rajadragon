@@ -113,9 +113,11 @@ while True:
     CameraGroup.CustomDraw(player)
     # -------------------------------------------------------------
     pygame.mouse.set_visible(False)
-
+    ChatRecieve = ''
     othersList = []
     reciven = UDPClientSocket.recvfrom(bufferSize)[0].decode()
+    if reciven.__contains__('$!CHAT'):
+        ChatRecieve = reciven[reciven.index('$!CHAT'):]
     for command in reciven.split('$'):
         if command.startswith('!LOC'):
             _, X, Y = command.split('|')
@@ -203,19 +205,19 @@ while True:
                     rectTmp = img.get_rect()
                     rectTmp.center = (X - CameraGroup.offset.x, Y - CameraGroup.offset.y)
                     Screen.blit(img, rectTmp)
-        elif command.startswith('!CHAT'):
-            command = command[6:]
-            heightTxt = 1
-            while command:
-                lenS = command.split("@")[0]
-                len2 = len(lenS)+1
-                lenS = int(lenS)
-                txt = command[len2:]
-                txt = txt[0:lenS]
-                lenS+=len2
-                command = command[lenS:]
-                Screen.blit(fontlvl.render(txt, True, (255, 255, 255)), (1, heightTxt))
-                heightTxt += 30
+    if ChatRecieve:
+        ChatRecieve = ChatRecieve[7:]
+        heightTxt = 1
+        while ChatRecieve:
+            lenS = ChatRecieve.split("@")[0]
+            len2 = len(lenS)+1
+            lenS = int(lenS)
+            txt = ChatRecieve[len2:]
+            txt = txt[0:lenS]
+            lenS+=len2
+            ChatRecieve = ChatRecieve[lenS:]
+            Screen.blit(fontlvl.render(txt, True, (255, 255, 255)), (1, heightTxt))
+            heightTxt += 30
     # pygame.draw.rect(Screen, (255, 0, 0), player.rect, 4)
 
     mouseX, mouseY = pygame.mouse.get_pos()

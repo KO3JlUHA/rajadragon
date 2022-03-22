@@ -40,7 +40,7 @@ rect = pygame.Rect((0, 0), (pl.Sizes.ScreenW, pl.Sizes.ScreenH))
 while True:
     left_flag = False
     final = ''
-
+    chatPacket = ''
     bytesAddressPair = UDPServerSocket.recvfrom(bufferSize)
 
     msg = bytesAddressPair[0].decode()
@@ -58,6 +58,8 @@ while True:
             if player['IP'] == ip:
                 players.remove(player)
     elif msg.startswith("!MOVE"):  # mag = "!MOVE.DIRECTIONX.DIRECTIONTY$!ATTACK.MOUSEX.MOUSEY"
+        if msg.__contains__('$!CHAT'):
+            chatPacket = msg[msg.index('$!CHAT'):]
         commands = msg.split('$')
         for command in commands:
             for player in players:
@@ -124,13 +126,19 @@ while True:
                         index = int(index)
                         if player['INVENTORY'][index]:
                             player['PICKED'] = index
-                    elif command.startswith('!CHAT'):
-                        command = command[6:]
-                        if len(Chatmsg) == 5:
-                            Chatmsg = Chatmsg[1:]
-                        Chatmsg.append({'TEXT': command, 'TIME': time.time() - StartTime})
+
     else:
         break
+
+    if chatPacket:
+        print(chatPacket)
+        chatPacket= chatPacket[7:]
+        if len(Chatmsg) == 5:
+            Chatmsg = Chatmsg[1:]
+        Chatmsg.append({'TEXT': chatPacket, 'TIME': time.time() - StartTime})
+
+
+
     final += "$!OTHER_p|"
     playerThis = ''
     inv = "$!INV|"
