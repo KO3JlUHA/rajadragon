@@ -365,9 +365,11 @@ while True:
         for msg in Chatmsg:
             if msg['TIME'] + 10 <= time.time() - StartTime:
                 Chatmsg.remove(msg)
-            final += msg['TEXT'] + ' [' + calcTime(int(msg['TIME'])) + ']'
-            # later to be final +=playerThis['NAME']+": "+ msg['TEXT'] + ' [' + calcTime(int(msg['TIME'])) + ']'
-            final += '@'
+            mmssgg = msg['TEXT'] + ' [' + calcTime(int(msg['TIME'])) + ']'
+            #mmssgg = msg['NAME']+': ' +msg['TEXT'] + ' [' + calcTime(int(msg['TIME'])) + ']'
+            final += str(len(mmssgg))+'@'+mmssgg
+
+
     if not left_flag:
         # print(final)
         UDPServerSocket.sendto(final.encode(), ip)

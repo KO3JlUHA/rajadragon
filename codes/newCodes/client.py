@@ -100,7 +100,7 @@ picked = 0
 inventory = ['', '', '', '', '', 'FUCK']
 
 inChat = False
-ChatMsg = ''
+ChatMsg = '$!CHAT|'
 BlinkCounter = 0
 msg = '$!CHAT|'
 
@@ -206,10 +206,16 @@ while True:
         elif command.startswith('!CHAT'):
             command = command[6:]
             heightTxt = 1
-            for txt in command.split('@'):
-                if txt:
-                    Screen.blit(fontlvl.render(txt, True, (255, 255, 255)), (1, heightTxt))
-                    heightTxt += 30
+            while command:
+                lenS = command.split("@")[0]
+                len2 = len(lenS)+1
+                lenS = int(lenS)
+                txt = command[len2:]
+                txt = txt[0:lenS]
+                lenS+=len2
+                command = command[lenS:]
+                Screen.blit(fontlvl.render(txt, True, (255, 255, 255)), (1, heightTxt))
+                heightTxt += 30
     # pygame.draw.rect(Screen, (255, 0, 0), player.rect, 4)
 
     mouseX, mouseY = pygame.mouse.get_pos()
@@ -257,6 +263,8 @@ while True:
                             pressed = ')'
                         elif pressed == '1':
                             pressed = '!'
+                        elif pressed == '2':
+                            pressed = '@'
                         elif pressed == '`':
                             pressed = '~'
                         elif pressed == '3':
@@ -325,7 +333,7 @@ while True:
 
     if ChatMsg != '$!CHAT|':
         tosend += ChatMsg
-        ChatMsg = ''
+        ChatMsg = '$!CHAT|'
     UDPClientSocket.sendto(tosend.encode(), serverAddressPort)
 
     rectt = pygame.Rect((1000, 900), (90, 90))
@@ -353,8 +361,5 @@ while True:
         rectt.right += 80
     pygame.draw.rect(Screen, (255, 255, 255), rectt, 10)
     Screen.blit(ms, mouseRect)
-
-
-
     pygame.display.update()
     Clock.tick(60)
