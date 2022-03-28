@@ -250,7 +250,7 @@ while True:
             lenS+=len2
             ChatRecieve = ChatRecieve[lenS:]
             Screen.blit(fontlvl.render(txt, True, (255, 255, 255)), (1, heightTxt))
-            heightTxt += 30
+            heightTxt += 30#
     # pygame.draw.rect(Screen, (255, 0, 0), player.rect, 4)
     mouseX, mouseY = pygame.mouse.get_pos()
     mouseRect.topleft = (mouseX, mouseY)
