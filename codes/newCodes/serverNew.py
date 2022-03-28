@@ -252,7 +252,7 @@ while True:
         final += f'$!PICKED|{playerThis["PICKED"]}'
     final += inv
 
-    final += f'$!MOBS|'#
+    final += f'$!MOBS|'
 
     for mobi in mobs:
         if not mobi.isAlive and mobi.deathtime + 7 < time.time():

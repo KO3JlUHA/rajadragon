@@ -135,7 +135,7 @@ BlinkCounter = 0
 msg = '$!CHAT|'
 
 Chat_enabled = True
-
+Chat_enabled_tmp = True
 
 ms = pygame.transform.scale(pygame.image.load('../../images/basics/mouse.png'), (23, 36))
 mouseRect = ms.get_rect()
@@ -250,7 +250,7 @@ while True:
             lenS+=len2
             ChatRecieve = ChatRecieve[lenS:]
             Screen.blit(fontlvl.render(txt, True, (255, 255, 255)), (1, heightTxt))
-            heightTxt += 30
+            heightTxt += 30#
     # pygame.draw.rect(Screen, (255, 0, 0), player.rect, 4)
     mouseX, mouseY = pygame.mouse.get_pos()
     mouseRect.topleft = (mouseX, mouseY)
@@ -259,7 +259,7 @@ while True:
     mouseYmap = int(mouseY + CameraGroup.offset.y)
     dirX = 0
     dirY = 0
-    if not inChat:
+    if not inChat and not inShop:
         dirX, dirY = player.move()
     tosend = '!MOVE.' + str(dirX) + '.' + str(dirY)
 
@@ -283,7 +283,7 @@ while True:
             mEvent = 0
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mEvent = event.button
-        elif not inChat and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        elif not inChat and not inShop and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             tosend += f'$!ATTACK.{mouseXmap}.{mouseYmap}'
         if event.type == pygame.KEYDOWN:
             if inChat:
@@ -344,13 +344,20 @@ while True:
                 if len(msg) <= 50:
                     if pressed >= ' ' and pressed <= '~':
                         msg += str(pressed)
-
-            if (event.key == pygame.K_RETURN or inChat)  and Chat_enabled:
+            if (event.key == pygame.K_RETURN or inChat) and Chat_enabled and not inShop:
                 if event.key == pygame.K_RETURN:
                     inChat = not inChat
                 if not inChat:
                     ChatMsg = msg
                     msg = '$!CHAT|'
+            elif event.key == pygame.K_b or inShop:
+                if event.key == pygame.K_b:
+                    inShop = not inShop
+                    if inShop:
+                        Chat_enabled_tmp = Chat_enabled
+                        Chat_enabled = False
+                    else:
+                        Chat_enabled = Chat_enabled_tmp
             elif event.key == pygame.K_1:
                 tosend += '$!PICK.0'
             elif event.key == pygame.K_2:
@@ -363,8 +370,6 @@ while True:
                 tosend += '$!PICK.4'
             elif event.key == pygame.K_6:
                 tosend += '$!PICK.5'
-            elif event.key == pygame.K_b:#
-                inShop = not inShop
             elif event.key == pygame.K_TAB:
                 Chat_enabled = not Chat_enabled
 
