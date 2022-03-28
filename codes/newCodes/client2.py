@@ -550,7 +550,7 @@ while True:
                 tosend += '$!PICK.1'
             elif event.key == pygame.K_3:
                 tosend += '$!PICK.2'
-            elif event.key == pygame.K_4:
+            elif event.key == pygame.K_4:#
                 tosend += '$!PICK.3'
             elif event.key == pygame.K_5:
                 tosend += '$!PICK.4'
