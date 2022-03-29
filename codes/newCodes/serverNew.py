@@ -48,9 +48,9 @@ while True:
     if msg == '!HI':  # "!HI"
 
         Data = {'IP': ip, 'X': 960, 'Y': 520, 'PARTICLES': [], 'HEALTH': 100, 'ATTACK-TIME': 0,
-                'INVENTORY': [wp.weapon(1, 'bow'), wp.weapon(2, 'bow'), wp.weapon(3, 'snowball'),
+                'INVENTORY': [wp.weapon(1, 'bow'), wp.weapon(2, 'dagger'), wp.weapon(3, 'snowball'),
                               wp.weapon(10, 'dagger'),
-                              wp.weapon(5, 'bow'), wp.weapon(6, 'bow')], 'PICKED': 0, 'GOLD': 0,
+                              wp.weapon(5, 'bow'), wp.weapon(6, 'snowball')], 'PICKED': 0, 'GOLD': 0,
                 'LASTTIME': time.time()}
         players.append(Data)
         final = '!LOC|960|520'

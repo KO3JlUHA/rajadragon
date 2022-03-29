@@ -5,8 +5,6 @@ import socket
 import Player as Basics
 import random
 
-
-
 offerImg = pygame.image.load('../../images/shop/offer.png')
 offerImg = pygame.transform.scale(offerImg, (offerImg.get_size()[0] * 1.25, offerImg.get_size()[1] * 1.25))
 buy_img = pygame.image.load('../../images/shop/buy.png')
@@ -14,10 +12,10 @@ buy_img = pygame.transform.scale(buy_img, (buy_img.get_size()[0] / 1.7, buy_img.
 sell_img = pygame.image.load('../../images/shop/sell.png')
 sell_img = pygame.transform.scale(sell_img, (sell_img.get_size()[0] / 1.7, sell_img.get_size()[1] / 1.7))
 
-
 upgrade_img = pygame.image.load('../../images/shop/upgrade.png')
 
 upgrade_img = pygame.transform.scale(upgrade_img, (upgrade_img.get_size()[0] / 1.7, upgrade_img.get_size()[1] / 1.7))
+
 
 class button():
     def __init__(self, img, X, Y, lvl, dmg, cooldown, range, upgrade, sell, price):
@@ -45,7 +43,7 @@ class button():
             self.clicked = False
         return False
 
-    def showOffer(self):
+    def showOffer(self, name):
         Screen.blit(offerImg, (0, 0))
         txtt = fontShop.render(self.lvl, True, (255, 20, 30))
         rt = txtt.get_rect()
@@ -79,12 +77,10 @@ class button():
 
         if self.upgrade != '0':
             if not buySellOrUpgrade:
-                buySellOrUpgrade.append(button(upgrade_img, 25, 10, 0,0,0,0,0,0,0))
+                buySellOrUpgrade.append(button(upgrade_img, 25, 10, 0, 0, 0, 0, 0, 0, 0))
                 buySellOrUpgrade.append(button(sell_img, 25, 120, 0, 0, 0, 0, 0, 0, 0))
             Screen.blit(upgrade_img, (25, 10))
             Screen.blit(sell_img, (25, 120))
-
-
 
             txtt = fontShop.render(self.upgrade, True, (255, 20, 30))
             rt = txtt.get_rect()
@@ -99,13 +95,14 @@ class button():
         # print(len(buySellOrUpgrade))
         for buttonOrSmthg in buySellOrUpgrade:
             if buttonOrSmthg.main():
-                if len(buySellOrUpgrade)==1:
+                print(name)
+                if len(buySellOrUpgrade) == 1:
                     print('buy pressed')
-                elif buySellOrUpgrade.index(buttonOrSmthg)==0:
+                elif buySellOrUpgrade.index(buttonOrSmthg) == 0:
                     print('upgrade pressed')
                 else:
                     print('sell pressed')
-            #add blits of sell and upgrade
+            # add blits of sell and upgrade
 
 
 ShopImg = pygame.image.load('../../images/shop/shop.png')
@@ -397,21 +394,21 @@ while True:
         startcordsX = Basics.Sizes.ScreenW / 2 - 395
         startcordsY = Basics.Sizes.ScreenH / 2 + 20
         for item in inventory:
-            lvl, name = item.split('|')
+            lvl, name1 = item.split('|')
             icon = iconBow
-            dmg2 = 6*int(lvl)
+            dmg2 = 6 * int(lvl)
             cooldown2 = 2
             range2 = 700
-            upgrade_price = 140*int(lvl)
-            sell_price = 130*int(lvl)
-            if name == 'snowball':
+            upgrade_price = 140 * int(lvl)
+            sell_price = 130 * int(lvl)
+            if name1 == 'snowball':
                 icon = iconCumball
                 dmg2 = int(lvl) * 2
                 cooldown2 = 0.5
                 range2 = 600
                 upgrade_price = 40 * int(lvl)
                 sell_price = 30 * int(lvl)
-            elif name == 'dagger':
+            elif name1 == 'dagger':
                 icon = iconDagger  #
                 dmg2 = int(lvl) * 10
                 cooldown2 = 1
@@ -424,17 +421,22 @@ while True:
             upgrade_price = str(upgrade_price)
             sell_price = str(sell_price)
             if len(offer_buttons) < 7:
-                offer_buttons.append(button(icon, startcordsX, startcordsY, lvl, dmg2,  cooldown2, range2, upgrade_price, sell_price, '0'))
+                offer_buttons.append(
+                    button(icon, startcordsX, startcordsY, lvl, dmg2, cooldown2, range2, upgrade_price, sell_price,
+                           '0'))
             Screen.blit(icon, (startcordsX, startcordsY))
             startcordsX += 145
 
         for offer_button in offer_buttons:
+            name1 = inventory[offer_buttons.index(offer_button) - 1].split('|')[-1]
+            if offer_buttons.index(offer_button) == 0:
+                name1 = itemForOffer
             if offer_button.clicked:
-                offer_button.showOffer()
+                offer_button.showOffer(name1)
             else:
                 if offer_button.main():
                     buySellOrUpgrade = []
-                    offer_button.showOffer()
+                    offer_button.showOffer(name1)
                     for offer2 in offer_buttons:
                         if offer2 != offer_button:
                             offer2.clicked = False
