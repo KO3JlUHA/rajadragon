@@ -21,9 +21,9 @@ localIP = "0.0.0.0"
 localPort = 20003
 bufferSize = 1024
 mobs = []
-mob = pl.mob(200, 200, 2, False)
+mob = pl.mob(200, 200, 1, False)
 mobs.append(mob)
-mob = pl.mob(100, 100, 5, True)
+mob = pl.mob(100, 100, 1, True)
 mobs.append(mob)
 
 # Create a datagram socket
@@ -49,7 +49,7 @@ while True:
 
         Data = {'IP': ip, 'X': 960, 'Y': 520, 'PARTICLES': [], 'HEALTH': 100, 'ATTACK-TIME': 0,
                 'INVENTORY': [wp.weapon(1, 'bow'), wp.weapon(2, 'bow'), wp.weapon(3, 'snowball'),
-                              wp.weapon(400, 'dagger'),
+                              wp.weapon(10, 'dagger'),
                               wp.weapon(5, 'bow'), wp.weapon(6, 'bow')], 'PICKED': 0, 'GOLD': 0,
                 'LASTTIME': time.time()}
         players.append(Data)
