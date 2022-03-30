@@ -15,7 +15,7 @@ def genKey(len: int):
 
 
 def encript(key, msg):
-    msg2 = []
+    msg2 = []#
     for i in range(len(msg)):
         msg2.append(chr(ord(msg[i]) + (i+int(key)) * int(key[i % len(key)])))
     msg3 = ''

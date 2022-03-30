@@ -22,7 +22,7 @@ def read_csv(filename):
         data = csv.reader(data, delimiter=',')
         for row in data:
             map.append(list(row))
-    return map
+    return map#
 
 
 def calcTopLeft(id: int):
