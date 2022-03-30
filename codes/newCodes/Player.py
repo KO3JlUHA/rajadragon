@@ -96,8 +96,7 @@ class Player(pygame.sprite.Sprite):
 
         if keys[pygame.K_a]:
             dirX -= 1
-        dir = [dirX, dirY]
-        return dir
+        return dirX, dirY
 
 
 class PlayerParticle:
