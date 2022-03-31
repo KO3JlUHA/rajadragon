@@ -96,6 +96,7 @@ class button():
         for buttonOrSmthg in buySellOrUpgrade:
             if buttonOrSmthg.main():
                 print(name)
+                print(self.lvl)
                 if len(buySellOrUpgrade) == 1:
                     print('buy pressed')
                 elif buySellOrUpgrade.index(buttonOrSmthg) == 0:

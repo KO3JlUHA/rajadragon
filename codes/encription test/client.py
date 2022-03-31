@@ -4,6 +4,7 @@ import Rsa
 import Custon_Encription
 import socket
 
+import colorama
 from colorama import Fore
 
 serverAddressPort = ("127.0.0.1", 20003)
