@@ -61,10 +61,11 @@ e = int(e)
 
 key2 = rsa.key.PublicKey(e=e, n=n)
 
-message = input('Enter a message:\n')
-
-ciphertext = encrypt(message, key2)
-UDPClientSocket.sendto(ciphertext, serverAddressPort)
+while 1:
+    message = input('Enter a message:\n')
+    ciphertext = encrypt(message, key2)
+    print(ciphertext)
+    UDPClientSocket.sendto(ciphertext, serverAddressPort)
 
 # print(f'Cipher text: {ciphertext}')
 # print(f'Signature: {signature}')

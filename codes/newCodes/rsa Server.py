@@ -48,12 +48,15 @@ ip = UDPServerSocket.recvfrom(1024)[1]
 # print(pub)
 UDPServerSocket.sendto(f'{pub.n}${pub.e}'.encode(), ip)
 
-msg = UDPServerSocket.recvfrom(1024)[0]
-print(msg)
-msg = decrypt(msg, priv)
-print(msg)
-if msg:
-    signature = sign_sha1(msg, priv)
 
-    if verify_sha1(msg, signature, pub):
-        print('Signature verified!')
+while 1:
+    msg = UDPServerSocket.recvfrom(1024)[0]
+    print(msg)
+    input('press enter to see the decrypted text')
+    msg = decrypt(msg, priv)
+    print(msg)
+    if msg:
+        signature = sign_sha1(msg, priv)
+
+        if verify_sha1(msg, signature, pub):
+            print('Signature verified!')

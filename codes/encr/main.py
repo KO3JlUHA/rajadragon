@@ -16,13 +16,14 @@ def printIdNyRect(rect):
     except:
         pass
 
+
 def read_csv(filename):
     map = []
     with open(os.path.join(filename)) as data:
         data = csv.reader(data, delimiter=',')
         for row in data:
             map.append(list(row))
-    return map#
+    return map  #
 
 
 def calcTopLeft(id: int):
@@ -36,14 +37,14 @@ def tileDraw(xloc, yloc):
     x = 0
     y = 0
     for k in range(int(yloc / tile_size),
-                   int(yloc / tile_size) + 18):  # cameraGroup.offset.y, cameraGroup.offset.y + 14
+                   int(yloc / tile_size) + H + 2):  # cameraGroup.offset.y, cameraGroup.offset.y + 14
         for i in range(int(xloc / tile_size),
-                       int(xloc / tile_size) + 31):  # cameraGroup.offset.x, cameraGroup.offset.x + 24
+                       int(xloc / tile_size) + W + 1):  # cameraGroup.offset.x, cameraGroup.offset.x + 24
             try:
                 if i > 0 and k > 0:
                     x2, y2 = (calcTopLeft(int(map[k][i])))
                     Screen.blit(tile_set, (x * tile_size - xloc % tile_size, y * tile_size - yloc % tile_size),
-                                (int(x2), int(y2), 64, 64))
+                                (int(x2), int(y2), tile_size, tile_size))
             except:
                 pass
             x += 1
@@ -53,18 +54,24 @@ def tileDraw(xloc, yloc):
 
 pygame.init()
 Screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+W, H = Screen.get_size()
+W = int(W / tile_size)
+H = int(H / tile_size)
+print(H)
+print(W)
 
 clock = pygame.time.Clock()
 running = True
 map = read_csv('GROUND1.csv')
 tile_set = pygame.image.load('tileset64.png')
 print(len(map), len(map[0]))
-x, y = 32 + 11 * 64, 4 + 5 * 64
-player_speed = 8 * 8
+x, y = 32 + 0 * tile_size, 4 + 0 * tile_size
+player_speed = 8
 COLIDELIST = [4, 5, 22, 23, 26, 39, 40, 41, 43, 57, 58, 59, 60, 75, 76, 77, 78, 92, 93, 94, 95, 96]
 while running:
     # Screen.fill((81, 183, 250))
     Screen.fill('white')
+    print(x)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -88,7 +95,7 @@ while running:
 
     r = pygame.Rect((0, 0), (tile_size, tile_size))
     r.center = 960, 540
-    pygame.draw.rect(Screen, (0, 255, 0), r, 4)
+    pygame.draw.rect(Screen, (0, 255, 0), r)
     toadd = 0
     if x % tile_size < tile_size / 2:
         toadd = tile_size
@@ -98,18 +105,31 @@ while running:
     r2.y += player_speed * (keys[pygame.K_s] - keys[pygame.K_w])
     r2.x += player_speed * (keys[pygame.K_d] - keys[pygame.K_a])
     # pygame.draw.rect(Screen, (255, 0, 0), r2, 4)
-    print('---------------------------')
+    Xmove, Ymove = True, True
+
     if printIdNyRect(r2) in COLIDELIST:
         Flag = True  # top left
+        if r2.y + tile_size == r.y:
+            Ymove = False
+        else:
+            Xmove = False
     if (x + 32) % tile_size:
         r2.x += tile_size
         # pygame.draw.rect(Screen, (255, 0, 0), r2, 4)# top right
         if printIdNyRect(r2) in COLIDELIST:
             Flag = True
+            if r2.y + tile_size == r.y:
+                Ymove = False
+            else:
+                Xmove = False
         if (y - 4) % tile_size:
             r2.y += tile_size
             # pygame.draw.rect(Screen, (255, 0, 0), r2, 4)  # bottom right
             if printIdNyRect(r2) in COLIDELIST:
+                if r2.y - tile_size == r.y:
+                    Ymove = False
+                else:
+                    Xmove = False
                 Flag = True
             r2.y -= tile_size
         r2.x -= tile_size
@@ -119,12 +139,17 @@ while running:
         # pygame.draw.rect(Screen, (255, 0, 0), r2, 4)  # bottom left
         if printIdNyRect(r2) in COLIDELIST:
             Flag = True
+            if r2.y - tile_size == r.y:
+                Ymove = False
+            else:
+                Xmove = False
         r2.y -= tile_size
-    print(Flag)
 
     if Flag:
-        x -= player_speed * (keys[pygame.K_d] - keys[pygame.K_a])
-        y -= player_speed * (keys[pygame.K_s] - keys[pygame.K_w])
+        if not Xmove:
+            x -= player_speed * (keys[pygame.K_d] - keys[pygame.K_a])
+        if not Ymove:
+            y -= player_speed * (keys[pygame.K_s] - keys[pygame.K_w])
 
     # --------------------------------------------------------------------------
 
